@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Juuls reizen</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
+
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --panel-2: #1d222c;
+      --text: #e7eaf0;
+      --muted: #98a2b3;
+      --accent: #5b9dff;
+      --accent-2: #7c5bff;
+      --border: #262c38;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px; border-bottom: 1px solid var(--border);
+      background: rgba(13, 16, 21, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .header-left { display: flex; align-items: baseline; gap: 12px; }
+    header h1 { margin: 0; font-size: 20px; }
+    .header-stats { color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .toggle {
+      display: inline-flex; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 999px; padding: 4px;
+    }
+    .toggle button {
+      background: transparent; color: var(--muted); border: 0;
+      padding: 8px 16px; font-size: 14px; font-weight: 500;
+      border-radius: 999px; cursor: pointer;
+    }
+    .toggle button.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+    }
+    main { position: relative; height: calc(100vh - 65px); }
+    .view {
+      position: absolute; inset: 0; overflow: auto;
+      opacity: 0; visibility: hidden; transition: opacity 0.2s;
+    }
+    .view.active { opacity: 1; visibility: visible; }
+
+    #map { height: 100%; width: 100%; background: #0a0d12; }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: var(--panel); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .leaflet-popup-content { margin: 12px 14px; font-size: 14px; }
+    .leaflet-popup-content b { color: var(--text); }
+    .leaflet-popup-content small { color: var(--muted); }
+    .leaflet-popup-content .popup-link {
+      color: var(--accent); cursor: pointer;
+      display: inline-block; margin-top: 6px;
+    }
+
+    #timeline { padding: 36px 28px 80px; max-width: 980px; margin: 0 auto; }
+    .timeline-line { position: relative; padding-left: 32px; }
+    .timeline-line::before {
+      content: ""; position: absolute; left: 8px; top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      opacity: 0.6;
+    }
+    @keyframes tl-enter {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .tl-item {
+      position: relative; margin-bottom: 28px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 20px; cursor: pointer;
+      transition: transform 0.12s, border-color 0.12s;
+      animation: tl-enter 0.35s ease both;
+    }
+    .tl-item:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .tl-item::before {
+      content: ""; position: absolute; left: -29px; top: 22px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px var(--bg);
+    }
+    .tl-item h3 {
+      margin: 0 0 4px; font-size: 18px;
+      display: flex; align-items: center; gap: 8px;
+      justify-content: space-between;
+    }
+    .tl-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 999px; padding: 2px 9px;
+      font-size: 12px; font-weight: 400; color: var(--muted);
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .tl-badge.has-photos { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+    .tl-item .tl-meta { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+    .tl-item p { margin: 0; color: #cdd3df; font-size: 14px; line-height: 1.55; }
+    .tl-route {
+      margin-top: 8px; font-size: 13px; color: var(--muted); font-style: italic;
+    }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px); display: none;
+      align-items: center; justify-content: center;
+      z-index: 1000; padding: 24px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; max-width: 880px; width: 100%;
+      max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: var(--shadow); position: relative;
+    }
+    .modal header {
+      background: var(--panel-2); border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+    }
+    .modal header h2 { margin: 0; font-size: 20px; }
+    .modal header .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+    .modal .body { padding: 18px 20px 20px; overflow-y: auto; }
+    .modal .body p { margin: 0 0 16px; line-height: 1.6; color: #d8dde6; }
+    .modal-route {
+      margin-top: 14px; padding: 10px 12px;
+      background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; color: #cdd3df;
+    }
+    .modal-route b { color: var(--text); margin-right: 6px; }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .gallery img {
+      width: 100%; height: 140px; object-fit: cover;
+      border-radius: 10px; border: 1px solid var(--border);
+      background: var(--panel-2); cursor: pointer;
+      transition: transform 0.12s;
+    }
+    .gallery img:hover { transform: scale(1.02); }
+    .gallery .empty {
+      grid-column: 1 / -1; color: var(--muted); font-size: 14px;
+      text-align: center; padding: 20px;
+      border: 1px dashed var(--border); border-radius: 10px;
+    }
+    .modal .close {
+      position: absolute; top: 14px; right: 16px;
+      background: transparent; color: var(--muted);
+      border: 0; font-size: 24px; cursor: pointer; line-height: 1;
+    }
+    .modal .close:hover { color: var(--text); }
+    .modal-header-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-top: 6px;
+    }
+    .modal-map-btn {
+      background: transparent; border: 1px solid var(--accent);
+      color: var(--accent); border-radius: 6px;
+      padding: 4px 11px; font-size: 13px; cursor: pointer;
+      white-space: nowrap; flex-shrink: 0;
+      transition: background 0.12s;
+    }
+    .modal-map-btn:hover { background: rgba(91,157,255,0.12); }
+
+    .lightbox {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.92);
+      display: none; align-items: center; justify-content: center;
+      z-index: 2000; padding: 24px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90%; max-height: 90%;
+      object-fit: contain; border-radius: 8px;
+      user-select: none;
+    }
+    .lb-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.12); border: 0; color: #fff;
+      font-size: 48px; line-height: 1; padding: 8px 18px;
+      cursor: pointer; border-radius: 8px;
+      transition: background 0.15s;
+      user-select: none;
+    }
+    .lb-nav:hover { background: rgba(255,255,255,0.25); }
+    .lb-nav.hidden { visibility: hidden; pointer-events: none; }
+    #lb-prev { left: 16px; }
+    #lb-next { right: 16px; }
+    .lb-counter {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.6); font-size: 14px; pointer-events: none;
+    }
+
+    /* Vlag-markers — rechthoekig (3:2) zodat de hele vlag past zonder wit */
+    .flag-marker { background: transparent; border: 0; }
+    .flag-marker-inner {
+      position: relative; width: 36px; height: 24px;
+      border-radius: 3px; overflow: hidden;
+      border: 1.5px solid white;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+      transition: transform 0.12s;
+    }
+    .flag-marker:hover .flag-marker-inner { transform: scale(1.15); }
+    .flag-marker-inner .flag-img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    .tl-flag-img, .popup-flag, .modal-flag-img {
+      display: inline-block; vertical-align: middle;
+      object-fit: cover; border-radius: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .tl-flag-img    { width: 28px; height: 20px; margin-right: 4px; }
+    .popup-flag     { width: 22px; height: 16px; margin-right: 4px; }
+    .modal-flag-img { width: 32px; height: 22px; margin-right: 8px; }
+
+    .leaflet-tooltip.route-tooltip {
+      background: var(--panel); color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      font-size: 12px; padding: 4px 8px;
+    }
+
+    /* Year label in timeline */
+    .tl-year {
+      font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted);
+      padding: 4px 0 12px; margin-top: 4px;
+    }
+
+    /* Timeline year filter chips */
+    .tl-filters {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      margin-bottom: 28px;
+    }
+    .tl-filter-chip {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 999px; padding: 5px 14px;
+      font-size: 13px; font-weight: 500; color: var(--muted);
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .tl-filter-chip:hover { border-color: var(--accent); color: var(--text); }
+    .tl-filter-chip.active {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff; border-color: transparent;
+    }
+
+    /* Pulse ring on most-recent marker */
+    @keyframes pulse-ring {
+      0%   { box-shadow: 0 0 0 0 rgba(91, 157, 255, 0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(91, 157, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(91, 157, 255, 0); }
+    }
+    .flag-pulse-wrap { border-radius: 4px; animation: pulse-ring 2.5s ease-out infinite; }
+
+    /* Trip counter badge on map */
+    .map-counter {
+      position: absolute; bottom: 28px; left: 14px; z-index: 900;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 12px;
+      font-size: 13px; color: var(--muted);
+      pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .notice {
+      max-width: 720px; margin: 60px auto;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 28px;
+      box-shadow: var(--shadow);
+    }
+    .notice h2 { margin-top: 0; }
+    .notice code {
+      background: var(--panel-2); padding: 2px 6px;
+      border-radius: 4px; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <h1>Juuls reizen</h1>
+      <span id="header-stats" class="header-stats"></span>
+    </div>
+    <div class="toggle" role="tablist">
+      <button id="btn-map" class="active" role="tab" aria-selected="true">Kaart</button>
+      <button id="btn-timeline" role="tab" aria-selected="false">Tijdlijn</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="view-map" class="view active">
+      <div id="map"></div>
+    </div>
+    <div id="view-timeline" class="view">
+      <div id="timeline"></div>
+    </div>
+  </main>
+
+  <div id="modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal">
+      <button class="close" aria-label="Sluiten">&times;</button>
+      <header>
+        <h2 id="modal-title"></h2>
+        <div class="modal-header-row">
+          <div class="meta" id="modal-meta"></div>
+          <button id="modal-map-btn" class="modal-map-btn">Kaart bekijken →</button>
+        </div>
+      </header>
+      <div class="body">
+        <p id="modal-desc"></p>
+        <div id="modal-gallery" class="gallery"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox">
+    <button class="lb-nav" id="lb-prev" aria-label="Vorige foto">&#8249;</button>
+    <img id="lightbox-img" alt="" />
+    <button class="lb-nav" id="lb-next" aria-label="Volgende foto">&#8250;</button>
+    <div class="lb-counter" id="lb-counter"></div>
+  </div>
+
+  <script src="vacations.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
