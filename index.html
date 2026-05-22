@@ -266,12 +266,14 @@
       gap: 8px;
     }
 
-    .gallery img {
+    .gallery img, .gallery video {
       width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
       border-radius: 10px; border: 1px solid var(--border);
-      background: var(--panel-2); cursor: pointer; display: block;
+      background: var(--panel-2); display: block;
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     }
+
+    .gallery img { cursor: pointer; }
 
     .gallery img:hover {
       transform: scale(1.03);
@@ -321,7 +323,7 @@
 
     .lightbox.open { display: flex; }
 
-    .lightbox img {
+    .lightbox img, .lightbox video {
       max-width: 90%; max-height: 90%;
       object-fit: contain; border-radius: 6px; user-select: none;
     }
@@ -514,6 +516,7 @@
   <div id="lightbox" class="lightbox">
     <button class="lb-nav" id="lb-prev" aria-label="Vorige foto">&#8249;</button>
     <img id="lightbox-img" alt="" />
+    <video id="lightbox-video" controls style="display:none"></video>
     <button class="lb-nav" id="lb-next" aria-label="Volgende foto">&#8250;</button>
     <div class="lb-counter" id="lb-counter"></div>
   </div>

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:emilkowal.ski)",
+      "WebFetch(domain:impeccable.style)",
+      "WebFetch(domain:www.tasteskill.dev)",
+      "WebFetch(domain:www.skratch.world)",
+      "Bash(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\nideggen-2024\\\\.gitkeep\" -Force)",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\oslo-2024\\\\.gitkeep\" -Force)",
+      "Bash(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\tallinn-2023\\\\.gitkeep\" -Force)",
+      "Bash(Write-Output \"Done\")",
+      "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\nideggen-2024\\\\.gitkeep\" -Force)",
+      "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\oslo-2024\\\\.gitkeep\" -Force)",
+      "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\tallinn-2023\\\\.gitkeep\" -Force)",
+      "PowerShell(\"Done\")"
+    ]
+  }
+}

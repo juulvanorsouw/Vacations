@@ -85,7 +85,7 @@ window.VACATIONS = {
       "endDate": "2025-12-05",
       "description": "Oslo in de winter — sneeuw, lichtjes en gezellige cafés om op te warmen.",
       "folder": "pictures/oslo-2025-dec",
-      "pictures": []
+      "pictures": ["foto-1.jpeg", "foto-2.jpeg"]
     },
     {
       "id": "milan-2025",
@@ -116,7 +116,7 @@ window.VACATIONS = {
       "endDate": "2025-10-14",
       "description": "Een herfstweek in Oslo met kleurrijke bossen, frisse ochtenden en lange wandelingen.",
       "folder": "pictures/oslo-2025-okt",
-      "pictures": []
+      "pictures": ["foto-1.jpeg", "foto-2.jpeg"]
     },
     {
       "id": "durres-2025",
@@ -147,7 +147,7 @@ window.VACATIONS = {
       "endDate": "2025-08-07",
       "description": "Een week door de Alsace met Colmar en Sélestat, vakwerkhuisjes en wijngaarden.",
       "folder": "pictures/alsace-2025",
-      "pictures": ["bank.jpeg", "hakken.jpeg", "franse-paal.jpeg", "vakwerkhuizen.jpeg"],
+      "pictures": ["bank.jpeg", "hakken.jpeg", "franse-paal.jpeg", "franse-straat.jpeg"],
       "route": [
         { "name": "Colmar",   "lat": 48.0794, "lon": 7.3585 },
         { "name": "Sélestat", "lat": 48.2599, "lon": 7.4540 },
@@ -202,6 +202,19 @@ window.VACATIONS = {
       ]
     },
     {
+      "id": "nideggen-2024",
+      "title": "Nideggen",
+      "location": "Nideggen, Duitsland",
+      "country": "DE",
+      "lat": 50.6978,
+      "lon": 6.4739,
+      "startDate": "2024-11-20",
+      "endDate": "2024-11-24",
+      "description": "Een lang weekend in het Eifelgebied bij het historische stadje Nideggen.",
+      "folder": "pictures/nideggen-2024",
+      "pictures": ["foto-1.jpeg", "foto-2.jpeg", "foto-3.jpeg", "video-1.mp4"]
+    },
+    {
       "id": "kos-2024",
       "title": "Kos",
       "location": "Kos, Griekenland",
@@ -213,6 +226,38 @@ window.VACATIONS = {
       "description": "Een week op het Griekse eiland Kos. (Datums zijn een schatting — pas aan in vacations.js zodra je ze weet.)",
       "folder": "pictures/kos-2024",
       "pictures": ["groepsdiner.jpeg"]
+    },
+    {
+      "id": "oslo-2024",
+      "title": "Oslo (lang verblijf)",
+      "location": "Tverrbakken 4, 0475 Oslo",
+      "country": "NO",
+      "lat": 59.9441,
+      "lon": 10.7476,
+      "startDate": "2024-02-01",
+      "endDate": "2024-06-28",
+      "description": "Saturnveien 8 en Tverrbakken 4, 0475 Oslo.",
+      "folder": "pictures/oslo-2024",
+      "pictures": ["foto-1.jpeg", "foto-2.jpeg", "foto-3.jpeg", "foto-4.jpeg", "video-1.mp4"]
+    },
+    {
+      "id": "tallinn-2023",
+      "title": "Tallinn",
+      "location": "Tallinn, Estland",
+      "country": "EE",
+      "countries": ["EE", "FI"],
+      "lat": 59.4370,
+      "lon": 24.7536,
+      "startDate": "2023-05-20",
+      "endDate": "2023-05-27",
+      "description": "Een week naar Tallinn met een tussenstop in Helsinki.",
+      "folder": "pictures/tallinn-2023",
+      "pictures": ["foto-1.jpeg", "foto-2.jpeg", "video-1.mp4"],
+      "route": [
+        { "name": "Helsinki", "lat": 60.1699, "lon": 24.9384 },
+        { "name": "Tallinn",  "lat": 59.4370, "lon": 24.7536 },
+        { "name": "Helsinki", "lat": 60.1699, "lon": 24.9384 }
+      ]
     }
   ]
 };
