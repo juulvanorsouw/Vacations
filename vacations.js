@@ -22,6 +22,27 @@ window.VACATIONS = {
       "pictures": ["poort-guinnes.jpg", "schildpad.jpg", "uiteten.jpg"]
     },
     {
+      "id": "luxembourg-2026",
+      "title": "Luxemburg",
+      "location": "Luxemburg Stad, Luxemburg",
+      "country": "LU",
+      "countries": ["NL", "BE", "FR", "LU"],
+      "lat": 49.6117,
+      "lon": 6.1319,
+      "startDate": "2026-05-13",
+      "endDate": "2026-05-17",
+      "description": "Een ritje door vier landen: vanuit Oijen via Luik en Hettange-Grande naar Luxemburg Stad, en weer terug. Mooie stadsgezichten, groene dalen en de indrukwekkende staatsbank op de Place de Metz.",
+      "folder": "pictures/luxembourg-2026",
+      "pictures": ["staatsbank-luxemburg.jpeg"],
+      "route": [
+        { "name": "Oijen",             "lat": 51.8016, "lon": 5.5458 },
+        { "name": "Luik",              "lat": 50.6451, "lon": 5.5734 },
+        { "name": "Hettange-Grande",   "lat": 49.4044, "lon": 6.1542 },
+        { "name": "Luxemburg Stad",    "lat": 49.6117, "lon": 6.1319 },
+        { "name": "Oijen",             "lat": 51.8016, "lon": 5.5458 }
+      ]
+    },
+    {
       "id": "oslo-2026",
       "title": "Oslo (lente)",
       "location": "Oslo, Noorwegen",
@@ -172,7 +193,7 @@ window.VACATIONS = {
       "endDate": "2025-03-09",
       "description": "Een week in Boedapest met daguitstapjes naar Esztergom en het Slowaakse Štúrovo aan de overkant van de Donau.",
       "folder": "pictures/budapest-2025",
-      "pictures": [],
+      "pictures": ["kabelbaan-burcht.jpeg", "vajdahunyad-kasteel.jpeg", "buda-kasteel-nacht.jpeg", "parlement-donau.jpeg"],
       "route": [
         { "name": "Boedapest", "lat": 47.4979, "lon": 19.0402 },
         { "name": "Esztergom", "lat": 47.7967, "lon": 18.7406 },
@@ -191,7 +212,7 @@ window.VACATIONS = {
       "endDate": "2024-07-08",
       "description": "Een week op het Griekse eiland Kos. (Datums zijn een schatting — pas aan in vacations.js zodra je ze weet.)",
       "folder": "pictures/kos-2024",
-      "pictures": []
+      "pictures": ["groepsdiner.jpeg"]
     }
   ]
 };
