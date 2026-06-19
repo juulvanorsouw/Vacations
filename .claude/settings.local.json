@@ -13,7 +13,8 @@
       "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\nideggen-2024\\\\.gitkeep\" -Force)",
       "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\oslo-2024\\\\.gitkeep\" -Force)",
       "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\tallinn-2023\\\\.gitkeep\" -Force)",
-      "PowerShell(\"Done\")"
+      "PowerShell(\"Done\")",
+      "mcp__visualize__read_me"
     ]
   }
 }

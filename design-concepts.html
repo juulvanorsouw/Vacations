@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Vacations App — Design Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Space+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:Space Grotesk,sans-serif;
+  --s:Playfair Display,serif;
+  --m:Space Mono,monospace;
+}
+body{background:#0c0c0c;color:#e0e0e0;font-family:var(--g);padding:40px 20px 100px;min-height:100vh}
+
+.pg-head{text-align:center;margin-bottom:52px}
+.pg-head h1{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#444;margin-bottom:14px}
+.pg-head h2{font-size:30px;font-weight:300;color:#e0e0e0;letter-spacing:-.02em}
+.pg-head p{margin-top:10px;font-size:13px;color:#444;max-width:480px;margin-inline:auto;line-height:1.6}
+
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:28px;max-width:1080px;margin:0 auto}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+
+/* card */
+.cc{border-radius:14px;overflow:hidden;border:1px solid #1a1a1a;background:#111;display:flex;flex-direction:column}
+.cp{height:340px;position:relative;overflow:hidden;flex-shrink:0}
+.ci{padding:20px 22px 22px;border-top:1px solid #1a1a1a}
+.clabel{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px}
+.cname{font-size:19px;font-weight:500;letter-spacing:-.02em;margin-bottom:7px;line-height:1.2}
+.cdesc{font-size:12.5px;line-height:1.65;color:#555;margin-bottom:16px}
+.ctags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.ctag{font-size:10px;font-weight:500;padding:3px 9px;border-radius:999px;border:1px solid #222;color:#444}
+.cbtn{width:100%;padding:9px;border-radius:8px;border:1px solid #222;background:transparent;color:#555;font-family:var(--g);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;letter-spacing:.02em}
+.cbtn:hover{border-color:#444;color:#e0e0e0;background:#181818}
+
+/* palettes */
+.pal{display:flex;gap:5px;margin-bottom:14px}
+.ps{width:24px;height:24px;border-radius:5px;flex-shrink:0}
+
+/* ══════════════════════════════════════
+   1 — SPLIT SCREEN
+══════════════════════════════════════ */
+.p1{display:grid;grid-template-columns:55% 45%;height:100%}
+.p1-map{background:#0b1018;position:relative;overflow:hidden}
+.p1-map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(100,160,255,.04)1px,transparent 1px),linear-gradient(90deg,rgba(100,160,255,.04)1px,transparent 1px);background-size:22px 22px}
+.p1-sidebar{background:#1a1410;display:flex;flex-direction:column;border-left:1px solid #2a2018}
+.p1-top{padding:12px 14px;border-bottom:1px solid #2a2018;display:flex;align-items:center;justify-content:space-between}
+.p1-logo{font-family:var(--s);font-size:14px;font-style:italic;color:#d4956a}
+.p1-stats{display:flex;gap:10px}
+.p1-stat{text-align:center}
+.p1-sn{font-size:14px;font-weight:600;color:#e8c090;line-height:1}
+.p1-sl{font-size:8px;color:#5a4030;text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
+.p1-cards{flex:1;overflow:hidden;padding:8px}
+.p1-card{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:#211810;border:1px solid #2a2018;margin-bottom:5px;cursor:pointer}
+.p1-card.active{background:#2c1e10;border-color:#c4803a}
+.p1-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.p1-cname{font-size:11px;font-weight:500;color:#c8a070;line-height:1.2}
+.p1-cmeta{font-size:9px;color:#5a4030;margin-top:1px}
+.p1-thumb{width:32px;height:32px;border-radius:5px;background:#3a2a1a;margin-left:auto;flex-shrink:0}
+/* map pins */
+.p1-pin{position:absolute;width:7px;height:7px;border-radius:50%;transform:translate(-50%,-50%)}
+.p1-pin.active{width:9px;height:9px;background:#c4803a!important}
+.p1-pin.active::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(196,128,58,.35)}
+.p1-header-full{grid-column:1/-1;background:#0f0c08;border-bottom:1px solid #2a2018;padding:9px 14px;display:flex;align-items:center;justify-content:space-between}
+
+/* ══════════════════════════════════════
+   2 — GLOBE HERO
+══════════════════════════════════════ */
+.p2{background:#080a10;display:flex;flex-direction:column}
+.p2-hero{flex:1;position:relative;overflow:hidden;min-height:0}
+.p2-globe-bg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.p2-head-bar{position:absolute;top:0;left:0;right:0;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(8,10,16,.8);border-bottom:1px solid rgba(255,255,255,.04);z-index:2}
+.p2-title{font-size:13px;font-weight:500;color:#9ab0d0;letter-spacing:.04em}
+.p2-num-row{position:absolute;top:42px;left:0;right:0;z-index:2;display:flex;justify-content:center;gap:16px;padding:10px}
+.p2-num{text-align:center}
+.p2-nv{font-size:22px;font-weight:300;color:#e8f0ff;letter-spacing:-.03em;line-height:1}
+.p2-nl{font-size:8px;color:#2a3a50;text-transform:uppercase;letter-spacing:.14em;margin-top:2px}
+.p2-cont-bar{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid #0f1520;overflow:hidden}
+.p2-cont-btn{font-size:9px;font-weight:500;padding:4px 10px;border-radius:999px;border:1px solid #0f1c2e;color:#2a3a50;white-space:nowrap;letter-spacing:.06em}
+.p2-cont-btn.active{border-color:#3b82f6;color:#7ab2f4;background:rgba(59,130,246,.08)}
+.p2-cards-row{display:flex;gap:8px;padding:8px 10px;overflow:hidden}
+.p2-pcard{flex-shrink:0;width:110px;border-radius:10px;overflow:hidden;border:1px solid #0f1c2e;background:#060c14;cursor:pointer}
+.p2-pcard.active{border-color:#3b82f6}
+.p2-pcard-img{height:52px}
+.p2-pcard-body{padding:6px 8px}
+.p2-pcard-city{font-size:10px;font-weight:600;color:#7ab2f4;line-height:1.2}
+.p2-pcard-date{font-size:8px;color:#2a3a50;margin-top:2px}
+.p2-pcard-cnt{font-size:8px;color:#1e4070;margin-top:3px}
+
+/* ══════════════════════════════════════
+   3 — FILM STRIP / CINEMATIC
+══════════════════════════════════════ */
+.p3{background:#100e0c;display:flex;flex-direction:column}
+.p3-head{padding:10px 14px;border-bottom:1px solid #1e1a16;display:flex;align-items:center;justify-content:space-between;background:#0c0a08}
+.p3-logo{font-size:14px;font-weight:300;color:#c8a060;letter-spacing:.06em}
+.p3-logo strong{font-weight:600;font-family:var(--s);font-style:italic}
+.p3-nav{display:flex;gap:2px;background:#141210;border-radius:8px;padding:2px}
+.p3-nb{font-size:10px;font-weight:500;padding:4px 10px;border-radius:6px;color:#3a3020}
+.p3-nb.a{background:#1e1a12;color:#c8a060}
+.p3-main{flex:1;position:relative;overflow:hidden;min-height:0}
+.p3-map-full{position:absolute;inset:0;background:#0a0e14}
+.p3-map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(80,120,180,.03)1px,transparent 1px),linear-gradient(90deg,rgba(80,120,180,.03)1px,transparent 1px);background-size:20px 20px}
+.p3-overlay{position:absolute;top:10px;left:10px;right:10px;background:rgba(12,10,8,.88);border:1px solid #2a2018;border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.p3-photo-big{width:70px;height:54px;border-radius:7px;background:#3a2a18;flex-shrink:0;overflow:hidden}
+.p3-trip-info{}
+.p3-trip-city{font-family:var(--s);font-size:16px;font-style:italic;color:#e8c08a;line-height:1.1}
+.p3-trip-meta{font-size:9px;color:#5a4030;margin-top:3px;letter-spacing:.06em}
+.p3-trip-desc{font-size:10px;color:#8a7060;margin-top:5px;line-height:1.5}
+.p3-photo-strip{display:flex;gap:3px;height:52px;padding:4px 8px;background:#080604;border-top:1px solid #1e1a16;align-items:center;overflow:hidden}
+.p3-ps-item{flex-shrink:0;border-radius:4px;overflow:hidden;cursor:pointer;border:1px solid #2a2018;transition:border-color .15s}
+.p3-ps-item.a{border-color:#c4803a}
+.p3-ps-thumb{width:52px;height:38px;object-fit:cover;display:block}
+.p3-strip-label{font-size:8px;color:#3a3020;margin:0 4px;white-space:nowrap;font-family:var(--m)}
+.p3-film-perf{display:flex;flex-direction:column;gap:4px;padding:0 4px}
+.p3-fp{width:6px;height:4px;background:#1a1710;border-radius:1px}
+
+/* ══════════════════════════════════════
+   4 — EXPEDITION BOARD
+══════════════════════════════════════ */
+.p4{background:#07100e;display:flex;flex-direction:column}
+.p4-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #0e1e1a}
+.p4-logo{font-size:13px;font-weight:500;color:#4dd4a8;letter-spacing:.04em}
+.p4-logo span{color:#7a9890;font-weight:400}
+.p4-pills{display:flex;gap:4px}
+.p4-pill{font-size:9px;font-weight:500;padding:4px 10px;border-radius:999px;border:1px solid #0e1e1a;color:#1a3830;letter-spacing:.06em}
+.p4-pill.a{border-color:#1dd8a8;color:#4dd4a8;background:rgba(29,216,168,.06)}
+.p4-body{flex:1;display:grid;grid-template-columns:2fr 1fr;min-height:0;overflow:hidden}
+.p4-map{background:#040c0a;position:relative;overflow:hidden}
+.p4-map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(29,216,168,.03)1px,transparent 1px),linear-gradient(90deg,rgba(29,216,168,.03)1px,transparent 1px);background-size:18px 18px}
+.p4-panel{background:#060f0c;border-left:1px solid #0e1e1a;display:flex;flex-direction:column;overflow:hidden}
+.p4-panel-head{padding:8px 10px;border-bottom:1px solid #0e1e1a;display:flex;align-items:center;justify-content:space-between}
+.p4-ph-lbl{font-size:8px;color:#1a3830;text-transform:uppercase;letter-spacing:.14em}
+.p4-ph-cnt{font-size:10px;color:#4dd4a8;font-weight:600}
+.p4-log{flex:1;overflow:hidden;padding:6px}
+.p4-entry{padding:7px 8px;border-radius:6px;background:#07100e;border:1px solid #0e1e1a;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.p4-entry.recent{border-color:#1a3830;background:#0a1812}
+.p4-entry-flag{width:18px;height:12px;border-radius:2px;flex-shrink:0}
+.p4-entry-info{flex:1}
+.p4-entry-city{font-size:10px;font-weight:500;color:#4dd4a8;line-height:1.2}
+.p4-entry-date{font-size:8px;color:#1a3830;margin-top:1px}
+.p4-entry-dot{width:5px;height:5px;border-radius:50%;background:#4dd4a8;flex-shrink:0;margin-left:auto}
+.p4-entry-dot.dim{background:#1a3830}
+.p4-bottom{padding:8px 10px;border-top:1px solid #0e1e1a;display:flex;justify-content:space-between;align-items:center}
+.p4-world-stat{text-align:center}
+.p4-ws-n{font-size:14px;font-weight:600;color:#4dd4a8;line-height:1}
+.p4-ws-l{font-size:8px;color:#1a3830;text-transform:uppercase;letter-spacing:.1em;margin-top:1px}
+/* map elements */
+.mpin{position:absolute;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
+.mpin::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1px solid currentColor;opacity:.3}
+.mline{position:absolute;height:1px;transform-origin:left center;opacity:.35}
+
+/* shared map dark */
+.darkmap-base{background:#08101a}
+.map-dot-eu{background:#5b9dff}
+.map-dot-warm{background:#c4803a}
+.map-dot-teal{background:#4dd4a8}
+
+/* ── label colors ── */
+.l1{color:#c4803a}
+.l2{color:#3b82f6}
+.l3{color:#c8a060}
+.l4{color:#4dd4a8}
+.b1:hover{border-color:#c4803a;color:#c4803a}
+.b2:hover{border-color:#3b82f6;color:#3b82f6}
+.b3:hover{border-color:#c8a060;color:#c8a060}
+.b4:hover{border-color:#4dd4a8;color:#4dd4a8}
+</style>
+</head>
+<body>
+
+<div class="pg-head">
+  <h1>Design Concepts</h1>
+  <h2>Juuls reizen — refined directions</h2>
+  <p>Four structural concepts. Each uses both warm tones and a cool map. Real data: Oslo, Dublin, Porto, Milaan, Albanië.</p>
+</div>
+
+<div class="grid">
+
+<!-- ════════════════════════════════════════
+     1 · SPLIT — warm list / cool map
+════════════════════════════════════════ -->
+<div class="cc">
+<div class="cp">
+  <div class="p1" style="height:100%">
+    <!-- full-width header -->
+    <div class="p1-header-full">
+      <span style="font-family:var(--s);font-style:italic;font-size:14px;color:#d4956a">Juuls reizen</span>
+      <span style="font-size:10px;color:#5a4030;letter-spacing:.12em">27 reizen · 17 landen</span>
+    </div>
+    <!-- map -->
+    <div class="p1-map" style="grid-column:1;grid-row:2;border-top:1px solid #1a1008">
+      <div class="p1-map-grid"></div>
+      <!-- europe schematic -->
+      <svg style="position:absolute;inset:0;width:100%;height:100%">
+        <!-- rough europe coastline suggestion -->
+        <path d="M 20,60 Q 35,45 50,50 Q 70,42 90,48 Q 110,44 130,55 Q 145,60 150,75 Q 145,90 130,95 Q 110,100 90,92 Q 70,100 55,95 Q 35,92 20,80 Z" fill="#0f1e30" stroke="#162840" stroke-width="0.5"/>
+        <!-- routes -->
+        <line x1="55%" y1="35%" x2="52%" y2="48%" stroke="#c4803a" stroke-width="1" stroke-opacity=".5" stroke-dasharray="3,4"/>
+        <line x1="52%" y1="48%" x2="40%" y2="55%" stroke="#c4803a" stroke-width="1" stroke-opacity=".3" stroke-dasharray="3,4"/>
+        <line x1="52%" y1="48%" x2="58%" y2="62%" stroke="#5b9dff" stroke-width="1" stroke-opacity=".35" stroke-dasharray="3,4"/>
+        <line x1="40%" y1="55%" x2="38%" y2="65%" stroke="#5b9dff" stroke-width="1" stroke-opacity=".3" stroke-dasharray="3,4"/>
+      </svg>
+      <!-- pins: Oslo, Dublin, Oslo2, Porto, Milan, Albania -->
+      <div class="p1-pin" style="left:55%;top:35%;background:#5b9dff;width:7px;height:7px;border:1.5px solid rgba(91,157,255,.5)"></div>
+      <div class="p1-pin active" style="left:52%;top:48%;background:#c4803a"></div>
+      <div class="p1-pin" style="left:40%;top:55%;background:#5b9dff;width:7px;height:7px"></div>
+      <div class="p1-pin" style="left:38%;top:65%;background:#5b9dff;width:6px;height:6px"></div>
+      <div class="p1-pin" style="left:58%;top:62%;background:#5b9dff;width:6px;height:6px"></div>
+      <div class="p1-pin" style="left:63%;top:70%;background:#5b9dff;width:5px;height:5px"></div>
+    </div>
+    <!-- sidebar -->
+    <div class="p1-sidebar" style="grid-column:2;grid-row:2">
+      <div class="p1-top">
+        <div class="p1-stats">
+          <div class="p1-stat"><div class="p1-sn">27</div><div class="p1-sl">Reizen</div></div>
+          <div class="p1-stat"><div class="p1-sn">17</div><div class="p1-sl">Landen</div></div>
+        </div>
+        <span style="font-size:9px;color:#3a2818;letter-spacing:.1em">2019–2026</span>
+      </div>
+      <div class="p1-cards">
+        <div class="p1-card active">
+          <div class="p1-dot" style="background:#c4803a"></div>
+          <div>
+            <div class="p1-cname">🇮🇪 Dublin</div>
+            <div class="p1-cmeta">apr–mei 2026 · 3 foto's</div>
+          </div>
+          <div class="p1-thumb" style="background:#4a3020"></div>
+        </div>
+        <div class="p1-card">
+          <div class="p1-dot" style="background:#5b9dff"></div>
+          <div>
+            <div class="p1-cname">🇳🇴 Oslo</div>
+            <div class="p1-cmeta">apr 2026 · 2 foto's</div>
+          </div>
+          <div class="p1-thumb"></div>
+        </div>
+        <div class="p1-card">
+          <div class="p1-dot" style="background:#5b9dff"></div>
+          <div>
+            <div class="p1-cname">🇵🇹 Porto</div>
+            <div class="p1-cmeta">jan 2026 · 4 foto's</div>
+          </div>
+          <div class="p1-thumb" style="background:#3a3020"></div>
+        </div>
+        <div class="p1-card">
+          <div class="p1-dot" style="background:#5b9dff"></div>
+          <div>
+            <div class="p1-cname">🇮🇹 Milaan</div>
+            <div class="p1-cmeta">nov 2025 · 5 foto's</div>
+          </div>
+          <div class="p1-thumb" style="background:#302820"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="ci">
+  <div class="clabel l1">Concept 1</div>
+  <div class="cname">Split View</div>
+  <div class="cdesc">Map and trip list always visible side by side — no toggling needed. Warm amber sidebar for your travel log, cool dark map on the left. Click a trip and the map zooms + highlights the route. The world-map view slides in as a panel over the sidebar.</div>
+  <div class="pal">
+    <div class="ps" style="background:#0b1018"></div>
+    <div class="ps" style="background:#1a1410"></div>
+    <div class="ps" style="background:#c4803a"></div>
+    <div class="ps" style="background:#e8c090"></div>
+    <div class="ps" style="background:#5b9dff"></div>
+  </div>
+  <div class="ctags">
+    <span class="ctag">Persistent split</span>
+    <span class="ctag">No view toggle</span>
+    <span class="ctag">Warm sidebar</span>
+    <span class="ctag">Cool map</span>
+    <span class="ctag">Click-to-zoom</span>
+  </div>
+  <button class="cbtn b1" onclick="sendPrompt('Build Concept 1: Split View — persistent side-by-side layout, warm amber sidebar with trip list on the right, cool dark map on the left. Clicking a trip zooms and highlights the route. No separate view toggle needed.')">Build this concept ↗</button>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     2 · GLOBE HERO — map fills the top
+════════════════════════════════════════ -->
+<div class="cc">
+<div class="cp">
+<div class="p2">
+  <div class="p2-hero" style="height:160px;flex-shrink:0">
+    <div class="p2-head-bar">
+      <span class="p2-title">Juuls reizen</span>
+      <div class="p2-num-row" style="position:static;padding:0;gap:20px;justify-content:flex-end">
+        <div class="p2-num"><div class="p2-nv">27</div><div class="p2-nl">Reizen</div></div>
+        <div class="p2-num"><div class="p2-nv">17</div><div class="p2-nl">Landen</div></div>
+        <div class="p2-num"><div class="p2-nv">6</div><div class="p2-nl">Cont.</div></div>
+      </div>
+    </div>
+    <!-- globe -->
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;top:38px">
+      <svg width="100%" height="115" viewBox="0 0 360 115" preserveAspectRatio="xMidYMid meet">
+        <!-- globe -->
+        <ellipse cx="180" cy="57" rx="130" ry="50" fill="none" stroke="#0f1c2e" stroke-width="1"/>
+        <ellipse cx="180" cy="57" rx="65" ry="50" fill="none" stroke="#0a1624" stroke-width=".5"/>
+        <ellipse cx="180" cy="57" rx="130" ry="20" fill="none" stroke="#0a1624" stroke-width=".5"/>
+        <!-- country fills suggestion -->
+        <path d="M 155,40 Q 165,36 175,38 Q 182,40 180,48 Q 175,52 165,50 Q 155,48 155,40 Z" fill="#1a3050" opacity=".7"/>
+        <path d="M 195,50 Q 205,46 215,49 Q 220,54 215,60 Q 205,63 195,58 Z" fill="#3b82f6" opacity=".5"/>
+        <path d="M 140,48 Q 148,44 155,47 Q 157,53 152,56 Q 144,56 140,52 Z" fill="#3b82f6" opacity=".35"/>
+        <path d="M 208,35 Q 215,32 222,35 Q 225,40 220,44 Q 212,45 208,40 Z" fill="#3b82f6" opacity=".25"/>
+        <!-- dots -->
+        <circle cx="200" cy="52" r="3" fill="#3b82f6"/>
+        <circle cx="147" cy="50" r="2.5" fill="#3b82f6"/>
+        <circle cx="215" cy="37" r="2.5" fill="#3b82f6"/>
+        <circle cx="165" cy="43" r="3.5" fill="#f59e0b"/>
+        <circle cx="172" cy="55" r="2.5" fill="#3b82f6"/>
+        <!-- routes -->
+        <line x1="165" y1="43" x2="200" y2="52" stroke="#f59e0b" stroke-width="1" stroke-opacity=".5" stroke-dasharray="3,3"/>
+        <line x1="200" y1="52" x2="172" y2="55" stroke="#3b82f6" stroke-width="1" stroke-opacity=".4" stroke-dasharray="3,3"/>
+      </svg>
+    </div>
+  </div>
+  <!-- continent filter -->
+  <div class="p2-cont-bar">
+    <div class="p2-cont-btn active">Alle reizen</div>
+    <div class="p2-cont-btn">Europa</div>
+    <div class="p2-cont-btn">Azië</div>
+    <div class="p2-cont-btn">Amerika</div>
+    <div class="p2-cont-btn">Afrika</div>
+  </div>
+  <!-- horizontal postcard scroll -->
+  <div class="p2-cards-row" style="flex:1;align-items:stretch">
+    <div class="p2-pcard active">
+      <div class="p2-pcard-img" style="background:#c4803a;opacity:.8"></div>
+      <div class="p2-pcard-body">
+        <div class="p2-pcard-city">🇮🇪 Dublin</div>
+        <div class="p2-pcard-date">Apr–mei 2026</div>
+        <div class="p2-pcard-cnt">3 foto's</div>
+      </div>
+    </div>
+    <div class="p2-pcard">
+      <div class="p2-pcard-img" style="background:#1e3a5c"></div>
+      <div class="p2-pcard-body">
+        <div class="p2-pcard-city">🇳🇴 Oslo</div>
+        <div class="p2-pcard-date">Apr 2026</div>
+        <div class="p2-pcard-cnt">2 foto's</div>
+      </div>
+    </div>
+    <div class="p2-pcard">
+      <div class="p2-pcard-img" style="background:#2a3a50"></div>
+      <div class="p2-pcard-body">
+        <div class="p2-pcard-city">🇵🇹 Porto</div>
+        <div class="p2-pcard-date">Jan 2026</div>
+        <div class="p2-pcard-cnt">4 foto's</div>
+      </div>
+    </div>
+    <div class="p2-pcard">
+      <div class="p2-pcard-img" style="background:#1a2a40"></div>
+      <div class="p2-pcard-body">
+        <div class="p2-pcard-city">🇮🇹 Milaan</div>
+        <div class="p2-pcard-date">Nov 2025</div>
+        <div class="p2-pcard-cnt">5 foto's</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="ci">
+  <div class="clabel l2">Concept 2</div>
+  <div class="cname">Globe Hero</div>
+  <div class="cdesc">The world map takes the full top half — your trips light up as dots on the globe. Below it: horizontal postcard cards filtered by continent. No separate "world view" needed. Clicking a card zooms the globe and shows photos. Feels like Google Earth meets a travel feed.</div>
+  <div class="pal">
+    <div class="ps" style="background:#080a10"></div>
+    <div class="ps" style="background:#0f1c2e"></div>
+    <div class="ps" style="background:#3b82f6"></div>
+    <div class="ps" style="background:#f59e0b"></div>
+    <div class="ps" style="background:#e8f0ff"></div>
+  </div>
+  <div class="ctags">
+    <span class="ctag">Globe as hero</span>
+    <span class="ctag">Postcard scroll</span>
+    <span class="ctag">Continent filter</span>
+    <span class="ctag">No view tabs</span>
+    <span class="ctag">Navy + amber</span>
+  </div>
+  <button class="cbtn b2" onclick="sendPrompt('Build Concept 2: Globe Hero — D3 world map fills the top half as a permanent hero, horizontal scrolling trip postcards below filtered by continent. No separate view toggle. Navy dark + amber accent for the highlighted trip.')">Build this concept ↗</button>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     3 · FILM STRIP — cinematic dark + warm
+════════════════════════════════════════ -->
+<div class="cc">
+<div class="cp">
+<div class="p3">
+  <div class="p3-head">
+    <span class="p3-logo"><strong>Juuls</strong> reizen</span>
+    <div class="p3-nav">
+      <div class="p3-nb a">Kaart</div>
+      <div class="p3-nb">Tijdlijn</div>
+      <div class="p3-nb">Wereld</div>
+    </div>
+  </div>
+  <div class="p3-main" style="flex:1;min-height:0;height:220px">
+    <div class="p3-map-full"></div>
+    <div class="p3-map-grid"></div>
+    <!-- map content -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%">
+      <path d="M 40,30 Q 70,20 110,28 Q 145,22 175,35 Q 200,38 215,55 Q 210,75 195,82 Q 170,90 140,84 Q 110,92 80,85 Q 55,80 40,65 Z" fill="#0d1a28" stroke="#142030" stroke-width="0.8"/>
+      <line x1="52%" y1="28%" x2="48%" y2="42%" stroke="#c8a060" stroke-width="1.5" stroke-opacity=".5" stroke-dasharray="4,5"/>
+      <line x1="48%" y1="42%" x2="38%" y2="52%" stroke="#c8a060" stroke-width="1.5" stroke-opacity=".35" stroke-dasharray="4,5"/>
+      <line x1="48%" y1="42%" x2="55%" y2="62%" stroke="#6080a0" stroke-width="1" stroke-opacity=".4" stroke-dasharray="3,4"/>
+      <circle cx="52%" cy="28%" r="3" fill="#6080a0"/>
+      <circle cx="38%" cy="52%" r="3" fill="#6080a0"/>
+      <circle cx="55%" cy="62%" r="2.5" fill="#6080a0"/>
+      <circle cx="62%" cy="68%" r="2" fill="#6080a0"/>
+      <circle cx="48%" cy="42%" r="5" fill="#c8a060"/>
+      <circle cx="48%" cy="42%" r="9" fill="none" stroke="rgba(200,160,96,.2)" stroke-width="1"/>
+    </svg>
+    <!-- trip overlay card -->
+    <div class="p3-overlay">
+      <div class="p3-photo-big" style="background:linear-gradient(135deg,#3a2a18,#4a3820)"></div>
+      <div class="p3-trip-info">
+        <div class="p3-trip-city">Dublin, Ierland</div>
+        <div class="p3-trip-meta">30 APR – 3 MEI 2026 &nbsp;·&nbsp; 🇮🇪</div>
+        <div class="p3-trip-desc">Lang weekend in Dublin — Guinness rondleiding, lekker uiteten en onverwachte ontmoetingen.</div>
+      </div>
+    </div>
+    <!-- bottom gradient -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(transparent,#100e0c)"></div>
+  </div>
+  <!-- film strip -->
+  <div class="p3-photo-strip">
+    <div class="p3-film-perf"><div class="p3-fp"></div><div class="p3-fp"></div><div class="p3-fp"></div></div>
+    <div class="p3-ps-item a" style="width:52px;height:38px;background:#4a3020;border-radius:4px"></div>
+    <div class="p3-ps-item" style="width:52px;height:38px;background:#1a2a3a;border-radius:4px"></div>
+    <div class="p3-ps-item" style="width:52px;height:38px;background:#283040;border-radius:4px"></div>
+    <div class="p3-ps-item" style="width:52px;height:38px;background:#2a3020;border-radius:4px"></div>
+    <div class="p3-ps-item" style="width:52px;height:38px;background:#302018;border-radius:4px"></div>
+    <div class="p3-strip-label">27 reizen</div>
+    <div class="p3-film-perf"><div class="p3-fp"></div><div class="p3-fp"></div><div class="p3-fp"></div></div>
+  </div>
+</div>
+</div>
+<div class="ci">
+  <div class="clabel l3">Concept 3</div>
+  <div class="cname">Film Strip</div>
+  <div class="cdesc">Map takes the full screen. At the bottom: a horizontal film strip of all trips — scrub through them like a roll of film. The selected trip shows an overlay card on the map with its photo, dates, and description. Dark charcoal base with warm gold for the active trip. Very cinematic.</div>
+  <div class="pal">
+    <div class="ps" style="background:#0c0a08"></div>
+    <div class="ps" style="background:#100e0c"></div>
+    <div class="ps" style="background:#c8a060"></div>
+    <div class="ps" style="background:#6080a0"></div>
+    <div class="ps" style="background:#e8c080"></div>
+  </div>
+  <div class="ctags">
+    <span class="ctag">Full-screen map</span>
+    <span class="ctag">Film strip nav</span>
+    <span class="ctag">Overlay card</span>
+    <span class="ctag">Charcoal + gold</span>
+    <span class="ctag">Cinematic</span>
+  </div>
+  <button class="cbtn b3" onclick="sendPrompt('Build Concept 3: Film Strip — map fills the full screen, horizontal film-strip of all trips along the bottom. Selecting a trip shows an overlay info card on the map. Charcoal dark base with warm gold for the active trip.')">Build this concept ↗</button>
+</div>
+</div>
+
+<!-- ════════════════════════════════════════
+     4 · EXPEDITION BOARD — teal ops log
+════════════════════════════════════════ -->
+<div class="cc">
+<div class="cp">
+<div class="p4">
+  <div class="p4-head">
+    <span class="p4-logo">Juuls <span>reizen</span></span>
+    <div class="p4-pills">
+      <div class="p4-pill a">Kaart</div>
+      <div class="p4-pill">Log</div>
+      <div class="p4-pill">Wereld</div>
+    </div>
+  </div>
+  <div class="p4-body" style="height:240px">
+    <div class="p4-map">
+      <div class="p4-map-grid"></div>
+      <svg style="position:absolute;inset:0;width:100%;height:100%">
+        <!-- europe shape -->
+        <path d="M 20,20 Q 50,10 90,18 Q 130,12 165,28 Q 185,34 190,50 Q 184,68 165,74 Q 135,80 100,74 Q 68,80 45,72 Q 22,62 20,45 Z" fill="#091610" stroke="#0e2018" stroke-width="0.8"/>
+        <!-- routes teal -->
+        <line x1="55%" y1="22%" x2="52%" y2="38%" stroke="#4dd4a8" stroke-width="1" stroke-opacity=".45" stroke-dasharray="3,5"/>
+        <line x1="52%" y1="38%" x2="40%" y2="48%" stroke="#4dd4a8" stroke-width="1" stroke-opacity=".3" stroke-dasharray="3,5"/>
+        <line x1="52%" y1="38%" x2="58%" y2="58%" stroke="#2a8060" stroke-width="1" stroke-opacity=".3" stroke-dasharray="3,5"/>
+        <line x1="40%" y1="48%" x2="38%" y2="62%" stroke="#2a8060" stroke-width="1" stroke-opacity=".25" stroke-dasharray="3,5"/>
+        <!-- pins -->
+        <circle cx="55%" cy="22%" r="3" fill="#2a8060"/>
+        <circle cx="40%" cy="48%" r="3" fill="#2a8060"/>
+        <circle cx="38%" cy="62%" r="3" fill="#2a8060"/>
+        <circle cx="58%" cy="58%" r="2.5" fill="#2a8060"/>
+        <circle cx="63%" cy="65%" r="2" fill="#1a5040"/>
+        <!-- active pin -->
+        <circle cx="52%" cy="38%" r="5" fill="#4dd4a8"/>
+        <circle cx="52%" cy="38%" r="9" fill="none" stroke="rgba(77,212,168,.2)" stroke-width="1"/>
+        <!-- coord lines -->
+        <line x1="0" y1="38%" x2="100%" y2="38%" stroke="rgba(77,212,168,.06)" stroke-width="1"/>
+        <line x1="52%" y1="0" x2="52%" y2="100%" stroke="rgba(77,212,168,.06)" stroke-width="1"/>
+        <!-- label -->
+        <text x="54%" y="33%" font-size="7" fill="#4dd4a8" font-family="Space Mono,monospace" opacity=".7">53.35° N / 6.26° W</text>
+      </svg>
+    </div>
+    <div class="p4-panel">
+      <div class="p4-panel-head">
+        <span class="p4-ph-lbl">Reislog</span>
+        <span class="p4-ph-cnt">27</span>
+      </div>
+      <div class="p4-log">
+        <div class="p4-entry recent">
+          <div class="p4-entry-flag" style="background:#169b62"></div>
+          <div class="p4-entry-info">
+            <div class="p4-entry-city">Dublin</div>
+            <div class="p4-entry-date">apr–mei 2026</div>
+          </div>
+          <div class="p4-entry-dot"></div>
+        </div>
+        <div class="p4-entry">
+          <div class="p4-entry-flag" style="background:#ef2b2d"></div>
+          <div class="p4-entry-info">
+            <div class="p4-entry-city">Oslo</div>
+            <div class="p4-entry-date">apr 2026</div>
+          </div>
+          <div class="p4-entry-dot dim"></div>
+        </div>
+        <div class="p4-entry">
+          <div class="p4-entry-flag" style="background:#006600"></div>
+          <div class="p4-entry-info">
+            <div class="p4-entry-city">Porto</div>
+            <div class="p4-entry-date">jan 2026</div>
+          </div>
+          <div class="p4-entry-dot dim"></div>
+        </div>
+        <div class="p4-entry">
+          <div class="p4-entry-flag" style="background:#009246"></div>
+          <div class="p4-entry-info">
+            <div class="p4-entry-city">Milaan</div>
+            <div class="p4-entry-date">nov 2025</div>
+          </div>
+          <div class="p4-entry-dot dim"></div>
+        </div>
+      </div>
+      <div class="p4-bottom">
+        <div class="p4-world-stat"><div class="p4-ws-n">17</div><div class="p4-ws-l">Landen</div></div>
+        <div class="p4-world-stat"><div class="p4-ws-n">8.6%</div><div class="p4-ws-l">Wereld</div></div>
+        <div class="p4-world-stat"><div class="p4-ws-n">248</div><div class="p4-ws-l">Foto's</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="ci">
+  <div class="clabel l4">Concept 4</div>
+  <div class="cname">Expedition Board</div>
+  <div class="cdesc">Feels like a military ops map + field journal. Map left, compact travel log right. Active pin shows coordinates. Deep forest green/teal on near-black — like night-vision. The world map is integrated as a toggle within the same layout. Precision and adventure.</div>
+  <div class="pal">
+    <div class="ps" style="background:#07100e"></div>
+    <div class="ps" style="background:#0e2018"></div>
+    <div class="ps" style="background:#4dd4a8"></div>
+    <div class="ps" style="background:#2a8060"></div>
+    <div class="ps" style="background:#9ae8d0"></div>
+  </div>
+  <div class="ctags">
+    <span class="ctag">Split ops layout</span>
+    <span class="ctag">Coordinates</span>
+    <span class="ctag">Field journal log</span>
+    <span class="ctag">Forest teal</span>
+    <span class="ctag">Night-vision</span>
+  </div>
+  <button class="cbtn b4" onclick="sendPrompt('Build Concept 4: Expedition Board — split layout with map left and compact travel log right. Shows GPS coordinates on active pin, deep forest green/teal on dark background. Military ops map aesthetic meets field journal.')">Build this concept ↗</button>
+</div>
+</div>
+
+</div>
+
+<div style="text-align:center;margin-top:52px;font-size:11px;color:#2a2a2a;letter-spacing:.1em">
+  Click "Build this concept" — or describe a mix of elements across concepts
+</div>
+
+</body>
+</html>

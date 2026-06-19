@@ -44,7 +44,7 @@ window.VACATIONS = {
     },
     {
       "id": "oslo-2026",
-      "title": "Oslo (lente)",
+      "title": "Oslo",
       "location": "Oslo, Noorwegen",
       "country": "NO",
       "lat": 59.9139,
@@ -76,7 +76,7 @@ window.VACATIONS = {
     },
     {
       "id": "oslo-2025-dec",
-      "title": "Oslo (winter)",
+      "title": "Oslo",
       "location": "Oslo, Noorwegen",
       "country": "NO",
       "lat": 59.9180,
@@ -107,7 +107,7 @@ window.VACATIONS = {
     },
     {
       "id": "oslo-2025-okt",
-      "title": "Oslo (herfst)",
+      "title": "Oslo",
       "location": "Oslo, Noorwegen",
       "country": "NO",
       "lat": 59.9090,
@@ -229,7 +229,7 @@ window.VACATIONS = {
     },
     {
       "id": "oslo-2024",
-      "title": "Oslo (lang verblijf)",
+      "title": "Oslo",
       "location": "Tverrbakken 4, 0475 Oslo",
       "country": "NO",
       "lat": 59.9441,

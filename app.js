@@ -1,7 +1,7 @@
-// app.js — leest reisdata uit window.VACATIONS (geladen via vacations.js)
-// en rendert de kaart, tijdlijn, modale details en lightbox.
+// app.js — Film Strip edition
+// Reads vacation data from window.VACATIONS (vacations.js) and renders
+// the map with cinematic film-strip navigation + overlay card.
 
-// ISO-3166-1 alpha-2 → numeriek (world-atlas feature IDs)
 var ISO2_TO_NUM = {
   "AF":4,"AL":8,"DZ":12,"AD":20,"AO":24,"AG":28,"AR":32,"AM":51,
   "AU":36,"AT":40,"AZ":31,"BS":44,"BH":48,"BD":50,"BB":52,"BY":112,
@@ -30,7 +30,6 @@ var ISO2_TO_NUM = {
   "ZM":894,"ZW":716,"XK":383,"PS":275,"CV":132,"KP":408,"KR":410
 };
 
-// Landnamen in het Nederlands (ISO-numeriek → naam)
 var LAND_NAMEN = {
   4:"Afghanistan",8:"Albanië",12:"Algerije",20:"Andorra",24:"Angola",
   32:"Argentinië",36:"Australië",40:"Oostenrijk",50:"Bangladesh",
@@ -66,87 +65,118 @@ var LAND_NAMEN = {
   268:"Georgië",624:"Guinee-Bissau",324:"Guinee",328:"Guyana",296:"Kiribati",
   417:"Kirgizstan",418:"Laos",426:"Lesotho",430:"Liberia",454:"Malawi",
   458:"Maleisië",462:"Malediven",478:"Mauritanië",480:"Mauritius",
-  104:"Myanmar",520:"Nauru",558:"Nicaragua",508:"Mozambique",
   646:"Rwanda",674:"San Marino",678:"São Tomé",690:"Seychellen",
-  90:"Salomonseilanden",548:"Vanuatu",776:"Tonga",780:"Trinidad en Tobago",
-  795:"Turkmenistan",798:"Tuvalu",132:"Kaapverdië",120:"Kameroen",
+  548:"Vanuatu",776:"Tonga",780:"Trinidad en Tobago",
+  795:"Turkmenistan",132:"Kaapverdië",120:"Kameroen",
   178:"Congo",180:"Congo (DRC)",384:"Ivoorkust",226:"Equatoriaal-Guinea"
 };
 
-var worldData = null;
-
-// Grenzen van het Europese vasteland voor landen met verre overzeese gebieden.
-// Polygonen waarvan het zwaartepunt buiten deze rechthoek valt worden als
-// onbezocht gekleurd, ook als het moederland bezocht is.
-var MAINLAND_BOUNDS = {
-  250: { minLon: -6,  maxLon: 13, minLat: 41, maxLat: 52 }, // Frankrijk  (excl. Guyana, Antillen, Réunion, Polynésie…)
-  528: { minLon:  2,  maxLon:  9, minLat: 50, maxLat: 54 }, // Nederland  (excl. Aruba, Curaçao, Bonaire)
-  208: { minLon:  6,  maxLon: 16, minLat: 54, maxLat: 58 }, // Denemarken (excl. Groenland, Faeröer)
-  826: { minLon:-10,  maxLon:  3, minLat: 49, maxLat: 61 }, // VK         (excl. Gibraltar, Falkland, …)
-  724: { minLon: -9,  maxLon:  5, minLat: 35, maxLat: 44 }, // Spanje     (excl. Canarische Eilanden)
+var CONTINENT_BOUNDS = {
+  "Europa":        [[-12, 34], [42, 72]],
+  "Azië":          [[25, -12], [180, 78]],
+  "Afrika":        [[-20, -36], [55, 38]],
+  "Noord-Amerika": [[-170, 7],  [-52, 72]],
+  "Zuid-Amerika":  [[-82, -56], [-34, 13]],
+  "Oceanië":       [[110, -48], [180, 22]]
 };
+
+var CONTINENT_COUNTRIES = {
+  "Europa":        ["AL","AD","AT","BY","BE","BA","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IS","IE","IT","XK","LV","LI","LT","LU","MT","MD","MC","ME","NL","MK","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","GB"],
+  "Azië":          ["AF","AM","AZ","BH","BD","BT","BN","KH","CN","GE","IN","ID","IR","IQ","IL","JP","JO","KZ","KW","KG","LA","LB","MY","MV","MN","MM","NP","KP","KR","OM","PK","PS","PH","QA","SA","SG","LK","SY","TJ","TH","TR","TM","AE","UZ","VN","YE"],
+  "Afrika":        ["DZ","AO","BJ","BW","BF","BI","CM","CV","CF","TD","KM","CG","CD","CI","DJ","EG","GQ","ER","ET","GA","GM","GH","GN","GW","KE","LS","LR","LY","MG","MW","ML","MR","MU","MA","MZ","NA","NE","NG","RW","ST","SN","SC","SL","SO","ZA","SS","SD","SZ","TZ","TG","TN","UG","ZM","ZW"],
+  "Noord-Amerika": ["AG","BS","BB","BZ","CA","CR","CU","DM","DO","SV","GD","GT","HT","HN","JM","MX","NI","PA","KN","LC","VC","TT","US"],
+  "Zuid-Amerika":  ["AR","BO","BR","CL","CO","EC","GY","PY","PE","SR","UY","VE"],
+  "Oceanië":       ["AU","FJ","KI","MH","FM","NR","NZ","PW","PG","WS","SB","TO","TV","VU"]
+};
+
+var MAINLAND_BOUNDS = {
+  250: { minLon: -6,  maxLon: 13, minLat: 41, maxLat: 52 },
+  528: { minLon:  2,  maxLon:  9, minLat: 50, maxLat: 54 },
+  208: { minLon:  6,  maxLon: 16, minLat: 54, maxLat: 58 },
+  826: { minLon:-10,  maxLon:  3, minLat: 49, maxLat: 61 },
+  724: { minLon: -9,  maxLon:  5, minLat: 35, maxLat: 44 },
+};
+
+var worldData = null;
+var worldProjection = null;
+var worldZoom = null;
+var worldSvg = null;
 
 const els = {
-  map: document.getElementById("map"),
-  timeline: document.getElementById("timeline"),
-  viewMap: document.getElementById("view-map"),
-  viewTimeline: document.getElementById("view-timeline"),
-  btnMap: document.getElementById("btn-map"),
-  btnTimeline: document.getElementById("btn-timeline"),
-  modal: document.getElementById("modal"),
-  modalTitle: document.getElementById("modal-title"),
-  modalMeta: document.getElementById("modal-meta"),
-  modalDesc: document.getElementById("modal-desc"),
-  modalGallery: document.getElementById("modal-gallery"),
-  modalClose: document.querySelector("#modal .close"),
-  modalMapBtn: document.getElementById("modal-map-btn"),
-  headerStats: document.getElementById("header-stats"),
-  viewWorld: document.getElementById("view-world"),
+  map:             document.getElementById("map"),
+  timeline:        document.getElementById("timeline"),
+  viewMap:         document.getElementById("view-map"),
+  viewTimeline:    document.getElementById("view-timeline"),
+  viewWorld:       document.getElementById("view-world"),
+  btnMap:          document.getElementById("btn-map"),
+  btnTimeline:     document.getElementById("btn-timeline"),
+  btnWorld:        document.getElementById("btn-world"),
+  modal:           document.getElementById("modal"),
+  modalTitle:      document.getElementById("modal-title"),
+  modalMeta:       document.getElementById("modal-meta"),
+  modalDesc:       document.getElementById("modal-desc"),
+  modalGallery:    document.getElementById("modal-gallery"),
+  modalClose:      document.querySelector("#modal .close"),
+  modalMapBtn:     document.getElementById("modal-map-btn"),
+  reizenBtn:       document.getElementById("reizen-btn"),
+  landenBtn:       document.getElementById("landen-btn"),
   worldVisitedLabel: document.getElementById("world-visited-label"),
-  worldTooltip: document.getElementById("world-tooltip"),
-  lightbox: document.getElementById("lightbox"),
-  lightboxImg: document.getElementById("lightbox-img"),
-  lightboxVideo: document.getElementById("lightbox-video"),
-  lbPrev: document.getElementById("lb-prev"),
-  lbNext: document.getElementById("lb-next"),
-  lbCounter: document.getElementById("lb-counter"),
+  worldTooltip:    document.getElementById("world-tooltip"),
+  lightbox:        document.getElementById("lightbox"),
+  lightboxImg:     document.getElementById("lightbox-img"),
+  lightboxVideo:   document.getElementById("lightbox-video"),
+  lbPrev:          document.getElementById("lb-prev"),
+  lbNext:          document.getElementById("lb-next"),
+  lbCounter:       document.getElementById("lb-counter"),
+  // Film strip + overlay
+  tripOverlay:     document.getElementById("trip-overlay"),
+  ovPhotoWrap:     document.getElementById("ov-photo-wrap"),
+  ovFlag:          document.getElementById("ov-flag"),
+  ovLocation:      document.getElementById("ov-location"),
+  ovTitle:         document.getElementById("ov-title"),
+  ovDates:         document.getElementById("ov-dates"),
+  ovDesc:          document.getElementById("ov-desc"),
+  ovRoute:         document.getElementById("ov-route"),
+  ovPhotoCount:    document.getElementById("ov-photo-count"),
+  ovDetailBtn:     document.getElementById("ov-detail-btn"),
+  filmItemsWrap:   document.getElementById("film-items-wrap"),
+  filmPerfsTop:    document.getElementById("film-perfs-top"),
+  filmPerfsBottom: document.getElementById("film-perfs-bottom"),
 };
 
-let vacations = [];
-let map = null;
+let vacations      = [];
+let map            = null;
 let lightboxPhotos = [];
-let lightboxAlts = [];
-let lightboxIndex = 0;
-let routesLayer = null;
-let clusterGroup = null;
-let activeRouteId = null;
+let lightboxAlts   = [];
+let lightboxIndex  = 0;
+let routesLayer    = null;
+let activeRouteId  = null;
 let currentModalId = null;
 let activeYearFilter = null;
-const markersById = new Map();
-const CITY_ZOOM = 12;
+let activeFilmId   = null;
+const markersById  = new Map();
+const CITY_ZOOM    = 12;
 
 (function init() {
-  els.btnMap.addEventListener("click", function () { setView("map"); });
+  els.btnMap.addEventListener("click",      function () { setView("map"); });
   els.btnTimeline.addEventListener("click", function () { setView("timeline"); });
+  els.btnWorld.addEventListener("click",    function () { setView("world"); });
+
   els.modalClose.addEventListener("click", closeModal);
   els.modal.addEventListener("click", function (e) { if (e.target === els.modal) closeModal(); });
+
   els.modalMapBtn.addEventListener("click", function () {
     if (!currentModalId) return;
     const v = vacations.find(function (x) { return x.id === currentModalId; });
     closeModal();
     setView("map");
-    if (v) {
-      showRouteFor(v);
-      zoomToVacation(v);
-      const marker = markersById.get(v.id);
-      if (marker) setTimeout(function () { marker.openPopup(); }, 800);
-    }
+    if (v) selectFilmItem(v.id);
   });
-  els.lightbox.addEventListener("click", function (e) {
-    if (e.target === els.lightbox) closeLightbox();
-  });
+
+  els.lightbox.addEventListener("click", function (e) { if (e.target === els.lightbox) closeLightbox(); });
   els.lbPrev.addEventListener("click", function (e) { e.stopPropagation(); navigateLightbox(-1); });
   els.lbNext.addEventListener("click", function (e) { e.stopPropagation(); navigateLightbox(1); });
+
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") { closeModal(); closeLightbox(); }
     if (els.lightbox.classList.contains("open")) {
@@ -155,7 +185,6 @@ const CITY_ZOOM = 12;
     }
   });
 
-  // Touch swipe for lightbox
   var touchStartX = 0;
   els.lightbox.addEventListener("touchstart", function (e) {
     touchStartX = e.changedTouches[0].clientX;
@@ -177,8 +206,11 @@ const CITY_ZOOM = 12;
 
   renderStats();
   renderMap();
+  renderFilmStrip();
   renderTimeline();
 })();
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
 
 function renderStats() {
   const countrySet = new Set();
@@ -186,38 +218,40 @@ function renderStats() {
     const list = Array.isArray(v.countries) ? v.countries : (v.country ? [v.country] : []);
     for (const c of list) countrySet.add(c.toUpperCase());
   }
-  els.headerStats.innerHTML =
-    '<button class="landen-btn" id="reizen-btn" aria-label="Ga naar tijdlijn">' +
-    vacations.length + " reizen</button>" +
-    " · " +
-    '<button class="landen-btn" id="landen-btn" aria-label="Bekijk bezochte landen op kaart">' +
-    countrySet.size + " landen</button>";
-  document.getElementById("reizen-btn").addEventListener("click", function () {
-    setView("timeline");
-  });
-  document.getElementById("landen-btn").addEventListener("click", function () {
-    setView("world");
-  });
+  if (els.reizenBtn) {
+    els.reizenBtn.textContent = vacations.length + " reizen";
+    els.reizenBtn.addEventListener("click", function () { setView("timeline"); });
+  }
+  if (els.landenBtn) {
+    els.landenBtn.textContent = countrySet.size + " landen";
+    els.landenBtn.addEventListener("click", function () { setView("world"); });
+  }
 }
+
+// ── View switching ─────────────────────────────────────────────────────────────
 
 function setView(view) {
   const showMap      = view === "map";
   const showTimeline = view === "timeline";
   const showWorld    = view === "world";
 
-  els.viewMap.classList.toggle("active", showMap);
+  els.viewMap.classList.toggle("active",      showMap);
   els.viewTimeline.classList.toggle("active", showTimeline);
-  els.viewWorld.classList.toggle("active", showWorld);
+  els.viewWorld.classList.toggle("active",    showWorld);
 
-  els.btnMap.classList.toggle("active", showMap);
+  els.btnMap.classList.toggle("active",      showMap);
   els.btnTimeline.classList.toggle("active", showTimeline);
+  els.btnWorld.classList.toggle("active",    showWorld);
 
-  els.btnMap.setAttribute("aria-selected", String(showMap));
+  els.btnMap.setAttribute("aria-selected",      String(showMap));
   els.btnTimeline.setAttribute("aria-selected", String(showTimeline));
+  els.btnWorld.setAttribute("aria-selected",    String(showWorld));
 
   if (showMap && map) setTimeout(function () { map.invalidateSize(); }, 50);
   if (showWorld) initWorldMap();
 }
+
+// ── Flags ──────────────────────────────────────────────────────────────────────
 
 function flagUrl(iso) {
   if (!iso || typeof iso !== "string" || iso.length !== 2) return "";
@@ -227,79 +261,73 @@ function flagUrl(iso) {
 function flagImg(iso, cssClass) {
   const url = flagUrl(iso);
   if (!url) return "";
-  const cls = cssClass || "flag";
-  return '<img class="' + cls + '" src="' + url + '" alt="' + escapeAttr(iso) + '" />';
+  return '<img class="' + (cssClass || "flag") + '" src="' + url + '" alt="' + escapeAttr(iso) + '" />';
 }
 
 function makePulseIcon(iso) {
   return L.divIcon({
     className: "flag-marker",
     html: '<div class="flag-pulse-wrap"><div class="flag-marker-inner">' + flagImg(iso, "flag-img") + "</div></div>",
-    iconSize: [36, 24],
-    iconAnchor: [18, 12],
-    popupAnchor: [0, -14],
+    iconSize: [36, 24], iconAnchor: [18, 12], popupAnchor: [0, -14],
   });
 }
 
 function makeFlagIcon(iso) {
-  // Rechthoekige vlag-marker (3:2). De CSS regelt de eigenlijke maatvoering.
   return L.divIcon({
     className: "flag-marker",
     html: '<div class="flag-marker-inner">' + flagImg(iso, "flag-img") + "</div>",
-    iconSize: [36, 24],
-    iconAnchor: [18, 12],
-    popupAnchor: [0, -14],
+    iconSize: [36, 24], iconAnchor: [18, 12], popupAnchor: [0, -14],
   });
 }
 
+// ── Map ────────────────────────────────────────────────────────────────────────
+
 function renderMap() {
-  const basemaps = {
-    "OpenStreetMap": L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      { attribution: "&copy; OpenStreetMap", maxZoom: 19 }
-    ),
-    "Satelliet": L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-      { attribution: "Tiles &copy; Esri", maxZoom: 19 }
-    ),
-  };
+  const dark = L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    { attribution: "&copy; OpenStreetMap &copy; CARTO", maxZoom: 19, subdomains: "abcd" }
+  );
+  const satellite = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { attribution: "Tiles &copy; Esri", maxZoom: 19 }
+  );
+  const osm = L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    { attribution: "&copy; OpenStreetMap", maxZoom: 19 }
+  );
 
   map = L.map("map", {
     worldCopyJump: true,
-    layers: [basemaps["OpenStreetMap"]],
+    layers: [dark],
+    zoomControl: true,
   }).setView([20, 0], 2);
 
-  L.control.layers(basemaps, null, { position: "topright", collapsed: true }).addTo(map);
-  routesLayer = L.layerGroup().addTo(map);
+  L.control.layers(
+    { "Donker": dark, "Satelliet": satellite, "Kaart": osm },
+    null,
+    { position: "topright", collapsed: true }
+  ).addTo(map);
 
-  const mostRecentId = (function () {
-    for (var i = 0; i < vacations.length; i++) {
-      if (typeof vacations[i].lat === "number") return vacations[i].id;
-    }
-    return null;
-  })();
+  routesLayer = L.layerGroup().addTo(map);
 
   const bounds = [];
 
   for (const v of vacations) {
     if (typeof v.lat !== "number" || typeof v.lon !== "number") continue;
 
-    const marker = L.marker([v.lat, v.lon], {
-      icon: v.id === mostRecentId ? makePulseIcon(v.country) : makeFlagIcon(v.country),
-    });
+    const marker = L.marker([v.lat, v.lon], { icon: makeFlagIcon(v.country) });
+
     const popupHtml =
       "<b>" + flagImg(v.country, "popup-flag") + " " + escapeHtml(v.title) + "</b><br />" +
       "<small>" + escapeHtml(formatDateRange(v.startDate, v.endDate)) + "</small><br />" +
       '<span class="popup-link" data-id="' + escapeAttr(v.id) + '">Details bekijken &rarr;</span>';
+
     marker.bindPopup(popupHtml);
     marker.on("popupopen", function (e) {
       const link = e.popup.getElement().querySelector(".popup-link");
       if (link) link.addEventListener("click", function () { openModal(v.id); });
     });
-    marker.on("click", function () {
-      showRouteFor(v);
-      zoomToVacation(v);
-    });
+    marker.on("click", function () { selectFilmItem(v.id); });
 
     marker.addTo(map);
     markersById.set(v.id, marker);
@@ -315,7 +343,172 @@ function renderMap() {
   if (bounds.length) {
     map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
   }
+
+  // Auto-select the most recent trip with coordinates
+  const first = vacations.find(function (v) { return typeof v.lat === "number"; });
+  if (first) setTimeout(function () { selectFilmItem(first.id); }, 400);
 }
+
+// ── Film strip ─────────────────────────────────────────────────────────────────
+
+function renderFilmStrip() {
+  if (!els.filmItemsWrap || !els.filmPerfsTop || !els.filmPerfsBottom) return;
+
+  // Perforations — fill both rails with enough holes
+  var perfHTML = "";
+  for (var i = 0; i < 60; i++) perfHTML += '<div class="film-perf"></div>';
+  els.filmPerfsTop.innerHTML    = perfHTML;
+  els.filmPerfsBottom.innerHTML = perfHTML;
+
+  // Trip thumbnails
+  els.filmItemsWrap.innerHTML = "";
+
+  for (const v of vacations) {
+    if (typeof v.lat !== "number" && typeof v.lon !== "number" &&
+        (!v.pictures || !v.pictures.length)) continue;
+
+    const item = document.createElement("div");
+    item.className = "film-item";
+    item.setAttribute("data-id", v.id);
+    item.title = v.title;
+
+    // Background: first photo or coloured placeholder
+    const hasPic = v.pictures && v.pictures.length > 0 && v.folder;
+    if (hasPic) {
+      const img = document.createElement("img");
+      img.className = "film-item-bg";
+      img.src = joinPath(v.folder, v.pictures[0]);
+      img.alt = v.title;
+      img.addEventListener("error", function () {
+        img.style.display = "none";
+        item.style.background = filmFallbackColor(v.country);
+      });
+      item.appendChild(img);
+    } else {
+      item.style.background = filmFallbackColor(v.country);
+    }
+
+    const label = document.createElement("div");
+    label.className = "film-item-label";
+    label.textContent = v.title + (v.startDate ? "  " + v.startDate.slice(0, 4) : "");
+    item.appendChild(label);
+
+    item.addEventListener("click", function () { selectFilmItem(v.id); });
+    els.filmItemsWrap.appendChild(item);
+  }
+}
+
+// Warm-tinted fallback colours keyed to rough geography
+function filmFallbackColor(iso) {
+  var hues = {
+    "NO":210,"SE":210,"DK":210,"FI":210,        // Scandinavia — blue
+    "IE":150,"GB":200,"NL":200,"BE":200,         // NW Europe — cool
+    "DE":220,"AT":220,"CH":220,"LU":220,
+    "FR":200,"PT":190,"ES":190,                  // Atlantic — cool blue
+    "IT":170,"GR":180,"HR":180,"ME":180,         // Med — teal
+    "HU":170,"SK":170,"CZ":170,"PL":200,
+    "AL":160,"BA":170,"RS":170,"MK":170,
+    "JP":350,"CN":340,"KR":340,"TH":320,         // Asia — warm pink/red
+    "IN":30, "ID":30,
+    "MA":30, "EG":35, "TN":35,                  // North Africa — amber
+    "ZA":20, "KE":20, "TZ":20,                  // Sub-Saharan — warm
+    "US":240,"CA":240,"MX":30,                  // Americas
+    "BR":120,"AR":200,"CL":200,
+    "AU":40, "NZ":200,
+  };
+  var hue = (iso && hues[iso.toUpperCase()]) || 28;
+  return "hsl(" + hue + ", 22%, 16%)";
+}
+
+// ── Film item selection + overlay card ────────────────────────────────────────
+
+function selectFilmItem(id) {
+  const v = vacations.find(function (x) { return x.id === id; });
+  if (!v) return;
+
+  activeFilmId = id;
+
+  // Update film strip active state
+  const items = els.filmItemsWrap ? els.filmItemsWrap.querySelectorAll(".film-item") : [];
+  items.forEach(function (el) {
+    el.classList.toggle("active", el.getAttribute("data-id") === id);
+  });
+
+  // Scroll film item into view
+  const activeEl = els.filmItemsWrap
+    ? els.filmItemsWrap.querySelector(".film-item.active")
+    : null;
+  if (activeEl) {
+    activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }
+
+  // Update overlay card
+  updateOverlay(v);
+
+  // Zoom map and show route
+  showRouteFor(v);
+  zoomToVacation(v);
+}
+
+function updateOverlay(v) {
+  if (!els.tripOverlay) return;
+
+  // Photo
+  els.ovPhotoWrap.innerHTML = "";
+  const pics = v.pictures || [];
+  if (pics.length && v.folder) {
+    const img = document.createElement("img");
+    img.className = "ov-photo";
+    img.src = joinPath(v.folder, pics[0]);
+    img.alt = v.title;
+    img.addEventListener("error", function () {
+      img.style.display = "none";
+    });
+    els.ovPhotoWrap.appendChild(img);
+  }
+
+  // Flag
+  const flagSrc = flagUrl(v.country);
+  if (flagSrc) {
+    els.ovFlag.src = flagSrc;
+    els.ovFlag.alt = v.country || "";
+    els.ovFlag.style.display = "";
+  } else {
+    els.ovFlag.style.display = "none";
+  }
+
+  // Location + title
+  els.ovLocation.textContent = (v.location || v.title || "").toUpperCase();
+  els.ovTitle.textContent    = v.title || "";
+
+  // Dates
+  els.ovDates.textContent = formatDateRange(v.startDate, v.endDate);
+
+  // Description
+  els.ovDesc.textContent = v.description || "";
+
+  // Route
+  if (v.route && v.route.length > 1) {
+    const stops = v.route.map(function (p) { return p.name || ""; }).filter(Boolean);
+    els.ovRoute.innerHTML = '<span>Route</span>  ' + escapeHtml(stops.join(" → "));
+    els.ovRoute.style.display = "";
+  } else {
+    els.ovRoute.style.display = "none";
+  }
+
+  // Photo count
+  els.ovPhotoCount.textContent = pics.length
+    ? pics.length + (pics.length === 1 ? " foto" : " foto's")
+    : "Geen foto's";
+
+  // Detail button
+  els.ovDetailBtn.onclick = function () { openModal(v.id); };
+
+  // Show card
+  els.tripOverlay.classList.remove("hidden");
+}
+
+// ── Routes ─────────────────────────────────────────────────────────────────────
 
 function showRouteFor(v) {
   clearRoute();
@@ -327,19 +520,19 @@ function showRouteFor(v) {
   if (latlngs.length < 2) return;
 
   L.polyline(latlngs, {
-    color: "#5b9dff",
-    weight: 3,
-    opacity: 0.85,
+    color: "#c8a060",
+    weight: 2.5,
+    opacity: 0.75,
     dashArray: "6, 8",
   }).addTo(routesLayer);
 
   v.route.forEach(function (pt) {
     if (typeof pt.lat !== "number" || typeof pt.lon !== "number") return;
     const dot = L.circleMarker([pt.lat, pt.lon], {
-      radius: 5,
-      color: "#fff",
-      weight: 2,
-      fillColor: "#5b9dff",
+      radius: 4,
+      color: "#e8c890",
+      weight: 1.5,
+      fillColor: "#c8a060",
       fillOpacity: 1,
     }).addTo(routesLayer);
     dot.bindTooltip(escapeHtml(pt.name || ""), {
@@ -356,25 +549,24 @@ function clearRoute() {
 }
 
 function zoomToVacation(v) {
-  // Collect all meaningful coordinates: route points first, fall back to the pin.
+  if (!map) return;
   const pts = [];
   if (v.route && Array.isArray(v.route)) {
     for (const p of v.route) {
-      if (typeof p.lat === "number" && typeof p.lon === "number") {
-        pts.push([p.lat, p.lon]);
-      }
+      if (typeof p.lat === "number" && typeof p.lon === "number") pts.push([p.lat, p.lon]);
     }
   }
   if (!pts.length && typeof v.lat === "number" && typeof v.lon === "number") {
     pts.push([v.lat, v.lon]);
   }
-
   if (pts.length === 1) {
     map.flyTo(pts[0], CITY_ZOOM, { duration: 0.7 });
   } else if (pts.length > 1) {
-    map.flyToBounds(L.latLngBounds(pts), { padding: [60, 60], duration: 0.7, maxZoom: 14 });
+    map.flyToBounds(L.latLngBounds(pts), { padding: [80, 80], duration: 0.7, maxZoom: 14 });
   }
 }
+
+// ── Timeline ───────────────────────────────────────────────────────────────────
 
 function renderTimeline(yearFilter) {
   if (yearFilter !== undefined) activeYearFilter = yearFilter;
@@ -448,7 +640,7 @@ function buildTlItem(v, idx) {
   item.className = "tl-item";
   item.tabIndex = 0;
   item.setAttribute("role", "button");
-  item.style.animationDelay = (idx * 0.05) + "s";
+  item.style.animationDelay = (idx * 0.04) + "s";
 
   const routeHtml = (v.route && v.route.length > 1)
     ? '<div class="tl-route">Route: ' +
@@ -473,6 +665,8 @@ function buildTlItem(v, idx) {
 
   return item;
 }
+
+// ── Modal ──────────────────────────────────────────────────────────────────────
 
 function openModal(id) {
   const v = vacations.find(function (x) { return x.id === id; });
@@ -526,6 +720,8 @@ function openModal(id) {
 
 function closeModal() { els.modal.classList.remove("open"); }
 
+// ── Lightbox ───────────────────────────────────────────────────────────────────
+
 function openLightbox(srcs, alts, index) {
   lightboxPhotos = srcs;
   lightboxAlts   = alts;
@@ -543,7 +739,6 @@ function navigateLightbox(dir) {
 function showLightboxFrame() {
   const src = lightboxPhotos[lightboxIndex];
   const isVid = src.endsWith(".mp4");
-
   if (isVid) {
     els.lightboxImg.style.display = "none";
     els.lightboxVideo.style.display = "";
@@ -555,7 +750,6 @@ function showLightboxFrame() {
     els.lightboxImg.src = src;
     els.lightboxImg.alt = lightboxAlts[lightboxIndex] || "";
   }
-
   const total = lightboxPhotos.length;
   els.lbCounter.textContent = total > 1 ? (lightboxIndex + 1) + " / " + total : "";
   els.lbPrev.classList.toggle("hidden", total <= 1);
@@ -567,44 +761,7 @@ function closeLightbox() {
   els.lightboxVideo.pause();
 }
 
-function joinPath(folder, file) {
-  if (!folder) return file;
-  let f = folder;
-  while (f.endsWith("/")) f = f.slice(0, -1);
-  let g = String(file);
-  while (g.startsWith("/")) g = g.slice(1);
-  return f + "/" + g;
-}
-
-function formatDateRange(start, end) {
-  if (!start && !end) return "";
-  const s = start ? new Date(start) : null;
-  const e = end ? new Date(end) : null;
-  const opts = { year: "numeric", month: "short", day: "numeric" };
-  const locale = "nl-NL";
-  if (s && e) {
-    if (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()) {
-      const month = s.toLocaleDateString(locale, { month: "short" });
-      return s.getDate() + "-" + e.getDate() + " " + month + " " + s.getFullYear();
-    }
-    return s.toLocaleDateString(locale, opts) + " - " + e.toLocaleDateString(locale, opts);
-  }
-  return (s || e).toLocaleDateString(locale, opts);
-}
-
-function escapeHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .split("&").join("&amp;")
-    .split("<").join("&lt;")
-    .split(">").join("&gt;")
-    .split('"').join("&quot;")
-    .split("'").join("&#039;");
-}
-
-function escapeAttr(str) { return escapeHtml(str); }
-
-// ── Wereldkaart ────────────────────────────────────────────────────────────────
+// ── World map ──────────────────────────────────────────────────────────────────
 
 function getVisitedNums() {
   var set = new Set();
@@ -622,42 +779,25 @@ function getVisitedNums() {
 function initWorldMap() {
   var wrap = document.getElementById("world-svg-wrap");
   if (!wrap) return;
-
-  if (worldData) {
-    drawWorldMap(worldData);
-    return;
-  }
-
+  if (worldData) { drawWorldMap(worldData); return; }
   fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
     .then(function (r) { return r.json(); })
-    .then(function (data) {
-      worldData = data;
-      drawWorldMap(data);
-    })
+    .then(function (data) { worldData = data; drawWorldMap(data); })
     .catch(function (err) { console.warn("Wereldkaart kon niet laden:", err); });
 }
 
 function drawWorldMap(world) {
-  var wrap  = document.getElementById("world-svg-wrap");
+  var wrap = document.getElementById("world-svg-wrap");
   if (!wrap) return;
 
   var visited = getVisitedNums();
-  var count   = visited.size;
+  if (els.worldVisitedLabel) els.worldVisitedLabel.textContent = visited.size + " bezocht";
 
-  if (els.worldVisitedLabel) {
-    els.worldVisitedLabel.textContent = count + " bezocht";
-  }
-
-  // Fixed coordinate space — SVG viewBox scales to container via CSS
   var W = 960, H = 500;
-
-  var projection = d3.geoNaturalEarth1()
-    .scale(153)
-    .translate([W / 2, H / 2]);
-
-  var pathGen   = d3.geoPath().projection(projection);
-  var countries = topojson.feature(world, world.objects.countries);
-  var borders   = topojson.mesh(world, world.objects.countries, function (a, b) { return a !== b; });
+  var projection = d3.geoNaturalEarth1().scale(153).translate([W / 2, H / 2]);
+  var pathGen    = d3.geoPath().projection(projection);
+  var countries  = topojson.feature(world, world.objects.countries);
+  var borders    = topojson.mesh(world, world.objects.countries, function (a, b) { return a !== b; });
 
   var svg = d3.select("#world-svg")
     .attr("viewBox", "0 0 " + W + " " + H)
@@ -665,24 +805,29 @@ function drawWorldMap(world) {
 
   svg.selectAll("*").remove();
 
-  // Ocean sphere
-  svg.append("path")
+  var g = svg.append("g");
+  worldSvg = svg;
+  worldProjection = projection;
+  worldZoom = d3.zoom()
+    .scaleExtent([1, 8])
+    .translateExtent([[0, 0], [W, H]])
+    .on("zoom", function (event) { g.attr("transform", event.transform); });
+  svg.call(worldZoom);
+
+  g.append("path")
     .datum({ type: "Sphere" })
     .attr("d", pathGen)
-    .attr("fill", "#090d12");
+    .attr("fill", "#07090f");
 
-  // Graticule (lat/lon grid lines)
-  svg.append("path")
+  g.append("path")
     .datum(d3.geoGraticule()())
     .attr("d", pathGen)
     .attr("fill", "none")
-    .attr("stroke", "#141e2e")
+    .attr("stroke", "#0f1520")
     .attr("stroke-width", 0.35);
 
-  // Country fills — mainland-aware so overseas territories aren't coloured
-  // when only the parent country is visited.
-  var VISITED_COLOR   = "#4d9fff";
-  var UNVISITED_COLOR = "#1c2538";
+  var VISITED_COLOR   = "#c8a060";
+  var UNVISITED_COLOR = "#1a1c24";
 
   function polycentroid(ring) {
     var n = ring.length, lx = 0, ly = 0;
@@ -692,7 +837,7 @@ function drawWorldMap(world) {
 
   function addCountryPath(geom, id, isVis) {
     var name = LAND_NAMEN[id] || "";
-    svg.append("path")
+    g.append("path")
       .datum({ type: "Feature", geometry: geom })
       .attr("class", "world-country" + (isVis ? " visited" : ""))
       .attr("d", pathGen)
@@ -702,8 +847,8 @@ function drawWorldMap(world) {
         if (!name || !els.worldTooltip) return;
         els.worldTooltip.textContent = name + (isVis ? " ✓" : "");
         els.worldTooltip.style.opacity = "1";
-        els.worldTooltip.style.left    = (event.clientX + 14) + "px";
-        els.worldTooltip.style.top     = (event.clientY - 36) + "px";
+        els.worldTooltip.style.left = (event.clientX + 14) + "px";
+        els.worldTooltip.style.top  = (event.clientY - 36) + "px";
       })
       .on("mouseleave", function () {
         if (els.worldTooltip) els.worldTooltip.style.opacity = "0";
@@ -711,18 +856,16 @@ function drawWorldMap(world) {
   }
 
   countries.features.forEach(function (feature) {
-    var id      = +feature.id;
-    var isVis   = visited.has(id);
-    var bounds  = MAINLAND_BOUNDS[id];
-    var geom    = feature.geometry;
+    var id     = +feature.id;
+    var isVis  = visited.has(id);
+    var bounds = MAINLAND_BOUNDS[id];
+    var geom   = feature.geometry;
 
-    // Simple case: country not visited, no bounds override needed, or not a MultiPolygon
     if (!isVis || !bounds || !geom || geom.type !== "MultiPolygon") {
       addCountryPath(geom, id, isVis);
       return;
     }
 
-    // Split polygons into mainland vs. overseas by centroid
     var mainland = [], overseas = [];
     geom.coordinates.forEach(function (poly) {
       var c = polycentroid(poly[0]);
@@ -731,31 +874,132 @@ function drawWorldMap(world) {
       (inMain ? mainland : overseas).push(poly);
     });
 
-    if (mainland.length) {
-      addCountryPath({ type: "MultiPolygon", coordinates: mainland }, id, true);
-    }
-    if (overseas.length) {
-      addCountryPath({ type: "MultiPolygon", coordinates: overseas }, id, false);
-    }
+    if (mainland.length) addCountryPath({ type: "MultiPolygon", coordinates: mainland }, id, true);
+    if (overseas.length) addCountryPath({ type: "MultiPolygon", coordinates: overseas }, id, false);
   });
 
-  // Country borders on top
-  svg.append("path")
+  g.append("path")
     .datum(borders)
     .attr("d", pathGen)
     .attr("fill", "none")
-    .attr("stroke", "#090d12")
+    .attr("stroke", "#07090f")
     .attr("stroke-width", 0.45);
+
+  renderWorldStats(visited);
 }
+
+function renderWorldStats(visitedNums) {
+  var bar = document.getElementById("world-stats-bar");
+  if (!bar) return;
+
+  var visitedIso2 = new Set();
+  for (var iso2 in ISO2_TO_NUM) {
+    if (visitedNums.has(ISO2_TO_NUM[iso2])) visitedIso2.add(iso2);
+  }
+
+  function pct(v, t) { return t === 0 ? "0%" : Math.round(v / t * 100) + "%"; }
+
+  var totalAll = 0, visitedAll = 0;
+  var contStats = {};
+  for (var cont in CONTINENT_COUNTRIES) {
+    var arr = CONTINENT_COUNTRIES[cont];
+    var vis = arr.filter(function (c) { return visitedIso2.has(c); }).length;
+    contStats[cont] = { visited: vis, total: arr.length };
+    totalAll  += arr.length;
+    visitedAll += vis;
+  }
+
+  var html = '<div class="world-stat-item global" data-cont="world"><strong>Wereld&nbsp;' +
+    visitedAll + "/" + totalAll + "</strong>&nbsp;" + pct(visitedAll, totalAll) + "</div>";
+  for (var c in contStats) {
+    var s = contStats[c];
+    html += '<div class="world-stat-item" data-cont="' + c + '"><span class="stat-cont">' +
+      c + "</span><strong>" + s.visited + "/" + s.total + "</strong>&nbsp;" + pct(s.visited, s.total) + "</div>";
+  }
+  bar.innerHTML = html;
+
+  bar.addEventListener("click", function (e) {
+    var item = e.target.closest(".world-stat-item");
+    if (!item) return;
+    var cont = item.getAttribute("data-cont");
+    if (cont === "world") {
+      if (worldSvg && worldZoom) {
+        worldSvg.transition().duration(600).call(worldZoom.transform, d3.zoomIdentity);
+      }
+    } else {
+      zoomToContinent(cont);
+    }
+  });
+}
+
+function zoomToContinent(cont) {
+  if (!worldProjection || !worldZoom || !worldSvg) return;
+  var bounds = CONTINENT_BOUNDS[cont];
+  if (!bounds) return;
+
+  var W = 960, H = 500;
+  var corners = [
+    [bounds[0][0], bounds[0][1]], [bounds[1][0], bounds[0][1]],
+    [bounds[1][0], bounds[1][1]], [bounds[0][0], bounds[1][1]]
+  ];
+  var projected = corners.map(function (c) { return worldProjection(c); });
+  var xs = projected.map(function (p) { return p[0]; });
+  var ys = projected.map(function (p) { return p[1]; });
+  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+
+  var scale = Math.min(8, 0.88 * Math.min(W / (x1 - x0), H / (y1 - y0)));
+  var tx = W / 2 - scale * (x0 + x1) / 2;
+  var ty = H / 2 - scale * (y0 + y1) / 2;
+
+  worldSvg.transition().duration(750).call(
+    worldZoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale)
+  );
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function joinPath(folder, file) {
+  if (!folder) return file;
+  let f = folder;
+  while (f.endsWith("/")) f = f.slice(0, -1);
+  let g = String(file);
+  while (g.startsWith("/")) g = g.slice(1);
+  return f + "/" + g;
+}
+
+function formatDateRange(start, end) {
+  if (!start && !end) return "";
+  const s = start ? new Date(start) : null;
+  const e = end   ? new Date(end)   : null;
+  const opts = { year: "numeric", month: "short", day: "numeric" };
+  const locale = "nl-NL";
+  if (s && e) {
+    if (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()) {
+      const month = s.toLocaleDateString(locale, { month: "short" });
+      return s.getDate() + "–" + e.getDate() + " " + month + " " + s.getFullYear();
+    }
+    return s.toLocaleDateString(locale, opts) + " – " + e.toLocaleDateString(locale, opts);
+  }
+  return (s || e).toLocaleDateString(locale, opts);
+}
+
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .split("&").join("&amp;")
+    .split("<").join("&lt;")
+    .split(">").join("&gt;")
+    .split('"').join("&quot;")
+    .split("'").join("&#039;");
+}
+
+function escapeAttr(str) { return escapeHtml(str); }
 
 function showLoadError(err) {
   const main = document.querySelector("main");
   const msg = (err && err.message) ? err.message : String(err);
   main.innerHTML =
-    [
-      '<div class="notice">',
-        "<h2>Reisdata kon niet geladen worden</h2>",
-        "<p>Foutmelding: " + escapeHtml(msg) + "</p>",
-      "</div>"
-    ].join("");
+    '<div class="notice"><h2>Reisdata kon niet geladen worden</h2>' +
+    "<p>Foutmelding: " + escapeHtml(msg) + "</p></div>";
 }
