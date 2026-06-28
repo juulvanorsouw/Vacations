@@ -9,6 +9,41 @@
 window.VACATIONS = {
   "vacations": [
     {
+      "id": "oslo-2026-jun",
+      "title": "Oslo",
+      "location": "Oslo, Noorwegen",
+      "country": "NO",
+      "lat": 59.9139,
+      "lon": 10.7522,
+      "startDate": "2026-06-28",
+      "endDate": "2026-07-03",
+      "description": "Een week Oslo in de zomer.",
+      "folder": "pictures/oslo-2026-jun",
+      "pictures": []
+    },
+    {
+      "id": "barcalona-2026",
+      "title": "Barcelona",
+      "location": "Barcelona, Spanje",
+      "country": "ES",
+      "lat": 41.3851,
+      "lon": 2.1734,
+      "startDate": "2026-06-11",
+      "endDate": "2026-06-16",
+      "description": "Een week Barcelona met de Arc de Triomf en het Circuit de Catalunya.",
+      "folder": "pictures/barcalona-2026",
+      "pictures": [
+        "WhatsApp Image 2026-06-28 at 16.53.33.jpeg",
+        "WhatsApp Video 2026-06-28 at 16.54.03.mp4",
+        "WhatsApp Image 2026-06-28 at 16.54.36.jpeg"
+      ],
+      "route": [
+        { "name": "Circuit de Catalunya", "lat": 41.5700, "lon": 2.2612 },
+        { "name": "Arc de Triomf",        "lat": 41.3914, "lon": 2.1808 },
+        { "name": "Circuit de Catalunya", "lat": 41.5700, "lon": 2.2612 }
+      ]
+    },
+    {
       "id": "dublin-2026",
       "title": "Dublin",
       "location": "Dublin, Ierland",
