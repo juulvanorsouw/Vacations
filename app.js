@@ -372,6 +372,7 @@ function openSheet(v) {
 
   // Photo / flag hero
   els.sheetPhotoWrap.innerHTML = "";
+  els.sheetPhotoWrap.onclick = () => openModal(v.id);
   const pics = v.pictures || [];
   if (pics.length && v.folder) {
     const img = document.createElement("img");
