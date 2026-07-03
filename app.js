@@ -1,6 +1,4 @@
-// app.js — Film Strip edition
-// Reads vacation data from window.VACATIONS (vacations.js) and renders
-// the map with cinematic film-strip navigation + overlay card.
+// app.js — Photo marker + bottom sheet edition
 
 var ISO2_TO_NUM = {
   "AF":4,"AL":8,"DZ":12,"AD":20,"AO":24,"AG":28,"AR":32,"AM":51,
@@ -66,18 +64,18 @@ var LAND_NAMEN = {
   417:"Kirgizstan",418:"Laos",426:"Lesotho",430:"Liberia",454:"Malawi",
   458:"Maleisië",462:"Malediven",478:"Mauritanië",480:"Mauritius",
   646:"Rwanda",674:"San Marino",678:"São Tomé",690:"Seychellen",
-  548:"Vanuatu",776:"Tonga",780:"Trinidad en Tobago",
-  795:"Turkmenistan",132:"Kaapverdië",120:"Kameroen",
-  178:"Congo",180:"Congo (DRC)",384:"Ivoorkust",226:"Equatoriaal-Guinea"
+  548:"Vanuatu",776:"Tonga",780:"Trinidad en Tobago",795:"Turkmenistan",
+  132:"Kaapverdië",120:"Kameroen",178:"Congo",180:"Congo (DRC)",
+  384:"Ivoorkust",226:"Equatoriaal-Guinea"
 };
 
 var CONTINENT_BOUNDS = {
-  "Europa":        [[-12, 34], [42, 72]],
-  "Azië":          [[25, -12], [180, 78]],
-  "Afrika":        [[-20, -36], [55, 38]],
-  "Noord-Amerika": [[-170, 7],  [-52, 72]],
-  "Zuid-Amerika":  [[-82, -56], [-34, 13]],
-  "Oceanië":       [[110, -48], [180, 22]]
+  "Europa":        [[-12,34],[42,72]],
+  "Azië":          [[25,-12],[180,78]],
+  "Afrika":        [[-20,-36],[55,38]],
+  "Noord-Amerika": [[-170,7],[-52,72]],
+  "Zuid-Amerika":  [[-82,-56],[-34,13]],
+  "Oceanië":       [[110,-48],[180,22]]
 };
 
 var CONTINENT_COUNTRIES = {
@@ -90,107 +88,122 @@ var CONTINENT_COUNTRIES = {
 };
 
 var MAINLAND_BOUNDS = {
-  250: { minLon: -6,  maxLon: 13, minLat: 41, maxLat: 52 },
-  528: { minLon:  2,  maxLon:  9, minLat: 50, maxLat: 54 },
-  208: { minLon:  6,  maxLon: 16, minLat: 54, maxLat: 58 },
-  826: { minLon:-10,  maxLon:  3, minLat: 49, maxLat: 61 },
-  724: { minLon: -9,  maxLon:  5, minLat: 35, maxLat: 44 },
+  250:{minLon:-6,maxLon:13,minLat:41,maxLat:52},
+  528:{minLon:2,maxLon:9,minLat:50,maxLat:54},
+  208:{minLon:6,maxLon:16,minLat:54,maxLat:58},
+  826:{minLon:-10,maxLon:3,minLat:49,maxLat:61},
+  724:{minLon:-9,maxLon:5,minLat:35,maxLat:44},
 };
 
-var worldData = null;
-var worldProjection = null;
-var worldZoom = null;
-var worldSvg = null;
+var worldData = null, worldProjection = null, worldZoom = null, worldSvg = null;
 
 const els = {
-  map:             document.getElementById("map"),
-  timeline:        document.getElementById("timeline"),
-  viewMap:         document.getElementById("view-map"),
-  viewTimeline:    document.getElementById("view-timeline"),
-  viewWorld:       document.getElementById("view-world"),
-  btnMap:          document.getElementById("btn-map"),
-  btnTimeline:     document.getElementById("btn-timeline"),
-  btnWorld:        document.getElementById("btn-world"),
-  modal:           document.getElementById("modal"),
-  modalTitle:      document.getElementById("modal-title"),
-  modalMeta:       document.getElementById("modal-meta"),
-  modalDesc:       document.getElementById("modal-desc"),
-  modalGallery:    document.getElementById("modal-gallery"),
-  modalClose:      document.querySelector("#modal .close"),
-  modalMapBtn:     document.getElementById("modal-map-btn"),
-  reizenBtn:       document.getElementById("reizen-btn"),
-  landenBtn:       document.getElementById("landen-btn"),
-  worldVisitedLabel: document.getElementById("world-visited-label"),
-  worldTooltip:    document.getElementById("world-tooltip"),
-  lightbox:        document.getElementById("lightbox"),
-  lightboxImg:     document.getElementById("lightbox-img"),
-  lightboxVideo:   document.getElementById("lightbox-video"),
-  lbPrev:          document.getElementById("lb-prev"),
-  lbNext:          document.getElementById("lb-next"),
-  lbCounter:       document.getElementById("lb-counter"),
-  // Film strip + overlay
-  tripOverlay:     document.getElementById("trip-overlay"),
-  ovPhotoWrap:     document.getElementById("ov-photo-wrap"),
-  ovFlag:          document.getElementById("ov-flag"),
-  ovLocation:      document.getElementById("ov-location"),
-  ovTitle:         document.getElementById("ov-title"),
-  ovDates:         document.getElementById("ov-dates"),
-  ovDesc:          document.getElementById("ov-desc"),
-  ovRoute:         document.getElementById("ov-route"),
-  ovPhotoCount:    document.getElementById("ov-photo-count"),
-  ovDetailBtn:     document.getElementById("ov-detail-btn"),
-  filmItemsWrap:   document.getElementById("film-items-wrap"),
-  filmPerfsTop:    document.getElementById("film-perfs-top"),
-  filmPerfsBottom: document.getElementById("film-perfs-bottom"),
+  viewMap:          document.getElementById("view-map"),
+  viewTimeline:     document.getElementById("view-timeline"),
+  viewWorld:        document.getElementById("view-world"),
+  btnMap:           document.getElementById("btn-map"),
+  btnTimeline:      document.getElementById("btn-timeline"),
+  btnWorld:         document.getElementById("btn-world"),
+  reizenBtn:        document.getElementById("reizen-btn"),
+  landenBtn:        document.getElementById("landen-btn"),
+  timeline:         document.getElementById("timeline"),
+  worldVisitedLabel:document.getElementById("world-visited-label"),
+  worldTooltip:     document.getElementById("world-tooltip"),
+  modal:            document.getElementById("modal"),
+  modalTitle:       document.getElementById("modal-title"),
+  modalMeta:        document.getElementById("modal-meta"),
+  modalDesc:        document.getElementById("modal-desc"),
+  modalGallery:     document.getElementById("modal-gallery"),
+  modalClose:       document.querySelector("#modal .close"),
+  modalMapBtn:      document.getElementById("modal-map-btn"),
+  lightbox:         document.getElementById("lightbox"),
+  lightboxImg:      document.getElementById("lightbox-img"),
+  lightboxVideo:    document.getElementById("lightbox-video"),
+  lbPrev:           document.getElementById("lb-prev"),
+  lbNext:           document.getElementById("lb-next"),
+  lbCounter:        document.getElementById("lb-counter"),
+  tripSheet:        document.getElementById("trip-sheet"),
+  sheetBackdrop:    document.getElementById("sheet-backdrop"),
+  sheetPhotoWrap:   document.getElementById("sheet-photo-wrap"),
+  sheetFlag:        document.getElementById("sheet-flag"),
+  sheetLocation:    document.getElementById("sheet-location"),
+  sheetTitle:       document.getElementById("sheet-title"),
+  sheetDates:       document.getElementById("sheet-dates"),
+  sheetDesc:        document.getElementById("sheet-desc"),
+  sheetRoute:       document.getElementById("sheet-route"),
+  sheetClose:       document.getElementById("sheet-close"),
+  sheetDetails:     document.getElementById("sheet-details"),
+  sheetPhotoCount:  document.getElementById("sheet-photo-count"),
 };
 
 let vacations      = [];
 let map            = null;
-let lightboxPhotos = [];
-let lightboxAlts   = [];
-let lightboxIndex  = 0;
 let routesLayer    = null;
-let activeRouteId  = null;
+let lightboxPhotos = [], lightboxAlts = [], lightboxIndex = 0;
 let currentModalId = null;
 let activeYearFilter = null;
-let activeFilmId   = null;
+let sheetVacationId  = null;
+let navVacations   = [];   // vacations with coords, sorted
+let navIndex       = -1;   // index of currently open trip in navVacations
 const markersById  = new Map();
 const CITY_ZOOM    = 12;
 
 (function init() {
-  els.btnMap.addEventListener("click",      function () { setView("map"); });
-  els.btnTimeline.addEventListener("click", function () { setView("timeline"); });
-  els.btnWorld.addEventListener("click",    function () { setView("world"); });
+  els.btnMap.addEventListener("click",      () => setView("map"));
+  els.btnTimeline.addEventListener("click", () => setView("timeline"));
+  els.btnWorld.addEventListener("click",    () => setView("world"));
 
   els.modalClose.addEventListener("click", closeModal);
-  els.modal.addEventListener("click", function (e) { if (e.target === els.modal) closeModal(); });
-
-  els.modalMapBtn.addEventListener("click", function () {
+  els.modal.addEventListener("click", e => { if (e.target === els.modal) closeModal(); });
+  els.modalMapBtn.addEventListener("click", () => {
     if (!currentModalId) return;
-    const v = vacations.find(function (x) { return x.id === currentModalId; });
+    const v = vacations.find(x => x.id === currentModalId);
     closeModal();
     setView("map");
-    if (v) selectFilmItem(v.id);
+    if (v) openSheet(v);
   });
 
-  els.lightbox.addEventListener("click", function (e) { if (e.target === els.lightbox) closeLightbox(); });
-  els.lbPrev.addEventListener("click", function (e) { e.stopPropagation(); navigateLightbox(-1); });
-  els.lbNext.addEventListener("click", function (e) { e.stopPropagation(); navigateLightbox(1); });
+  els.sheetClose.addEventListener("click", closeSheet);
+  els.sheetBackdrop.addEventListener("click", closeSheet);
+  els.sheetDetails.addEventListener("click", () => {
+    if (sheetVacationId) openModal(sheetVacationId);
+  });
 
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") { closeModal(); closeLightbox(); }
+  // Swipe on sheet: left = older trip, right = newer trip
+  let sheetTouchStartX = 0, sheetTouchStartY = 0;
+  els.tripSheet.addEventListener("touchstart", e => {
+    sheetTouchStartX = e.changedTouches[0].clientX;
+    sheetTouchStartY = e.changedTouches[0].clientY;
+  }, { passive: true });
+  els.tripSheet.addEventListener("touchend", e => {
+    if (!els.tripSheet.classList.contains("open")) return;
+    const dx = e.changedTouches[0].clientX - sheetTouchStartX;
+    const dy = e.changedTouches[0].clientY - sheetTouchStartY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      navigateTrip(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+
+  els.lightbox.addEventListener("click", e => { if (e.target === els.lightbox) closeLightbox(); });
+  els.lbPrev.addEventListener("click", e => { e.stopPropagation(); navigateLightbox(-1); });
+  els.lbNext.addEventListener("click", e => { e.stopPropagation(); navigateLightbox(1); });
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") { closeModal(); closeLightbox(); closeSheet(); }
     if (els.lightbox.classList.contains("open")) {
       if (e.key === "ArrowLeft")  { e.preventDefault(); navigateLightbox(-1); }
       if (e.key === "ArrowRight") { e.preventDefault(); navigateLightbox(1); }
     }
+    if (!els.lightbox.classList.contains("open") && !els.modal.classList.contains("open")) {
+      if (e.key === "ArrowLeft")  navigateTrip(-1);
+      if (e.key === "ArrowRight") navigateTrip(1);
+    }
   });
 
-  var touchStartX = 0;
-  els.lightbox.addEventListener("touchstart", function (e) {
-    touchStartX = e.changedTouches[0].clientX;
-  }, { passive: true });
-  els.lightbox.addEventListener("touchend", function (e) {
-    var dx = e.changedTouches[0].clientX - touchStartX;
+  let touchStartX = 0;
+  els.lightbox.addEventListener("touchstart", e => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+  els.lightbox.addEventListener("touchend",   e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
     if (Math.abs(dx) > 40) navigateLightbox(dx < 0 ? 1 : -1);
   }, { passive: true });
 
@@ -199,85 +212,40 @@ const CITY_ZOOM    = 12;
     return;
   }
 
-  vacations = window.VACATIONS.vacations.slice();
-  vacations.sort(function (a, b) {
-    return (b.startDate || "").localeCompare(a.startDate || "");
-  });
+  vacations = window.VACATIONS.vacations.slice().sort(
+    (a, b) => (b.startDate || "").localeCompare(a.startDate || "")
+  );
 
   renderStats();
   renderMap();
-  renderFilmStrip();
   renderTimeline();
 })();
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ── Stats ──────────────────────────────────────────────────────────────────────
 
 function renderStats() {
   const countrySet = new Set();
-  for (const v of vacations) {
-    const list = Array.isArray(v.countries) ? v.countries : (v.country ? [v.country] : []);
-    for (const c of list) countrySet.add(c.toUpperCase());
-  }
-  if (els.reizenBtn) {
-    els.reizenBtn.textContent = vacations.length + " reizen";
-    els.reizenBtn.addEventListener("click", function () { setView("timeline"); });
-  }
-  if (els.landenBtn) {
-    els.landenBtn.textContent = countrySet.size + " landen";
-    els.landenBtn.addEventListener("click", function () { setView("world"); });
-  }
+  vacations.forEach(v => {
+    const codes = Array.isArray(v.countries) ? v.countries : (v.country ? [v.country] : []);
+    codes.forEach(c => countrySet.add(c.toUpperCase()));
+  });
+  els.reizenBtn.textContent = vacations.length + " reizen";
+  els.reizenBtn.addEventListener("click", () => setView("timeline"));
+  els.landenBtn.textContent = countrySet.size + " landen";
+  els.landenBtn.addEventListener("click", () => setView("world"));
 }
 
 // ── View switching ─────────────────────────────────────────────────────────────
 
 function setView(view) {
-  const showMap      = view === "map";
-  const showTimeline = view === "timeline";
-  const showWorld    = view === "world";
-
-  els.viewMap.classList.toggle("active",      showMap);
-  els.viewTimeline.classList.toggle("active", showTimeline);
-  els.viewWorld.classList.toggle("active",    showWorld);
-
-  els.btnMap.classList.toggle("active",      showMap);
-  els.btnTimeline.classList.toggle("active", showTimeline);
-  els.btnWorld.classList.toggle("active",    showWorld);
-
-  els.btnMap.setAttribute("aria-selected",      String(showMap));
-  els.btnTimeline.setAttribute("aria-selected", String(showTimeline));
-  els.btnWorld.setAttribute("aria-selected",    String(showWorld));
-
-  if (showMap && map) setTimeout(function () { map.invalidateSize(); }, 50);
-  if (showWorld) initWorldMap();
-}
-
-// ── Flags ──────────────────────────────────────────────────────────────────────
-
-function flagUrl(iso) {
-  if (!iso || typeof iso !== "string" || iso.length !== 2) return "";
-  return "https://flagcdn.com/" + iso.toLowerCase() + ".svg";
-}
-
-function flagImg(iso, cssClass) {
-  const url = flagUrl(iso);
-  if (!url) return "";
-  return '<img class="' + (cssClass || "flag") + '" src="' + url + '" alt="' + escapeAttr(iso) + '" />';
-}
-
-function makePulseIcon(iso) {
-  return L.divIcon({
-    className: "flag-marker",
-    html: '<div class="flag-pulse-wrap"><div class="flag-marker-inner">' + flagImg(iso, "flag-img") + "</div></div>",
-    iconSize: [36, 24], iconAnchor: [18, 12], popupAnchor: [0, -14],
+  ["map","timeline","world"].forEach(v => {
+    const isActive = v === view;
+    document.getElementById("view-" + v).classList.toggle("active", isActive);
+    document.getElementById("btn-" + v).classList.toggle("active", isActive);
   });
-}
-
-function makeFlagIcon(iso) {
-  return L.divIcon({
-    className: "flag-marker",
-    html: '<div class="flag-marker-inner">' + flagImg(iso, "flag-img") + "</div>",
-    iconSize: [36, 24], iconAnchor: [18, 12], popupAnchor: [0, -14],
-  });
+  if (view === "map" && map) setTimeout(() => map.invalidateSize(), 50);
+  if (view === "world") initWorldMap();
+  if (view !== "map") closeSheet();
 }
 
 // ── Map ────────────────────────────────────────────────────────────────────────
@@ -285,285 +253,222 @@ function makeFlagIcon(iso) {
 function renderMap() {
   const dark = L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-    { attribution: "&copy; OpenStreetMap &copy; CARTO", maxZoom: 19, subdomains: "abcd" }
+    { attribution: "© OpenStreetMap © CARTO", maxZoom: 19, subdomains: "abcd" }
   );
   const satellite = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { attribution: "Tiles &copy; Esri", maxZoom: 19 }
-  );
-  const osm = L.tileLayer(
-    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "&copy; OpenStreetMap", maxZoom: 19 }
+    { attribution: "Tiles © Esri", maxZoom: 19 }
   );
 
-  map = L.map("map", {
-    worldCopyJump: true,
-    layers: [dark],
-    zoomControl: true,
-  }).setView([20, 0], 2);
-
-  L.control.layers(
-    { "Donker": dark, "Satelliet": satellite, "Kaart": osm },
-    null,
-    { position: "topright", collapsed: true }
-  ).addTo(map);
+  map = L.map("map", { layers: [dark], worldCopyJump: true }).setView([20, 0], 2);
+  L.control.layers({ "Donker": dark, "Satelliet": satellite }, null, { position: "topright", collapsed: true }).addTo(map);
 
   routesLayer = L.layerGroup().addTo(map);
 
+  navVacations = vacations.filter(v => typeof v.lat === "number" && typeof v.lon === "number");
+  const mostRecentId = navVacations[0]?.id;
   const bounds = [];
 
-  for (const v of vacations) {
-    if (typeof v.lat !== "number" || typeof v.lon !== "number") continue;
+  navVacations.forEach(v => {
+    const isRecent = v.id === mostRecentId;
+    const marker   = L.marker([v.lat, v.lon], { icon: makePhotoIcon(v, isRecent) });
 
-    const marker = L.marker([v.lat, v.lon], { icon: makeFlagIcon(v.country) });
-
-    const popupHtml =
-      "<b>" + flagImg(v.country, "popup-flag") + " " + escapeHtml(v.title) + "</b><br />" +
-      "<small>" + escapeHtml(formatDateRange(v.startDate, v.endDate)) + "</small><br />" +
-      '<span class="popup-link" data-id="' + escapeAttr(v.id) + '">Details bekijken &rarr;</span>';
-
-    marker.bindPopup(popupHtml);
-    marker.on("popupopen", function (e) {
-      const link = e.popup.getElement().querySelector(".popup-link");
-      if (link) link.addEventListener("click", function () { openModal(v.id); });
+    marker.on("click", () => {
+      setActiveMarker(v.id);
+      showRouteFor(v);
+      openSheet(v);
     });
-    marker.on("click", function () { selectFilmItem(v.id); });
 
     marker.addTo(map);
     markersById.set(v.id, marker);
     bounds.push([v.lat, v.lon]);
-  }
+  });
 
-  map.on("click", function (e) {
-    if (e.originalEvent && e.originalEvent.target &&
-        e.originalEvent.target.closest(".leaflet-marker-icon, .leaflet-popup")) return;
+  map.on("click", e => {
+    if (e.originalEvent?.target?.closest(".leaflet-marker-icon")) return;
+    closeSheet();
     clearRoute();
+    markersById.forEach(m => m.getElement()?.querySelector(".pm")?.classList.remove("active"));
   });
 
-  if (bounds.length) {
-    map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
-  }
+  // Prev/next nav buttons
+  addMapNavControls();
 
-  // Auto-select the most recent trip with coordinates
-  const first = vacations.find(function (v) { return typeof v.lat === "number"; });
-  if (first) setTimeout(function () { selectFilmItem(first.id); }, 400);
+  if (bounds.length) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 6 });
 }
 
-// ── Film strip ─────────────────────────────────────────────────────────────────
-
-function renderFilmStrip() {
-  if (!els.filmItemsWrap || !els.filmPerfsTop || !els.filmPerfsBottom) return;
-
-  // Perforations — fill both rails with enough holes
-  var perfHTML = "";
-  for (var i = 0; i < 60; i++) perfHTML += '<div class="film-perf"></div>';
-  els.filmPerfsTop.innerHTML    = perfHTML;
-  els.filmPerfsBottom.innerHTML = perfHTML;
-
-  // Trip thumbnails
-  els.filmItemsWrap.innerHTML = "";
-
-  for (const v of vacations) {
-    if (typeof v.lat !== "number" && typeof v.lon !== "number" &&
-        (!v.pictures || !v.pictures.length)) continue;
-
-    const item = document.createElement("div");
-    item.className = "film-item";
-    item.setAttribute("data-id", v.id);
-    item.title = v.title;
-
-    // Background: first photo or coloured placeholder
-    const hasPic = v.pictures && v.pictures.length > 0 && v.folder;
-    if (hasPic) {
-      const img = document.createElement("img");
-      img.className = "film-item-bg";
-      img.src = joinPath(v.folder, v.pictures[0]);
-      img.alt = v.title;
-      img.addEventListener("error", function () {
-        img.style.display = "none";
-        item.style.background = filmFallbackColor(v.country);
-      });
-      item.appendChild(img);
-    } else {
-      item.style.background = filmFallbackColor(v.country);
-    }
-
-    const label = document.createElement("div");
-    label.className = "film-item-label";
-    label.textContent = v.title + (v.startDate ? "  " + v.startDate.slice(0, 4) : "");
-    item.appendChild(label);
-
-    item.addEventListener("click", function () { selectFilmItem(v.id); });
-    els.filmItemsWrap.appendChild(item);
-  }
-}
-
-// Warm-tinted fallback colours keyed to rough geography
-function filmFallbackColor(iso) {
-  var hues = {
-    "NO":210,"SE":210,"DK":210,"FI":210,        // Scandinavia — blue
-    "IE":150,"GB":200,"NL":200,"BE":200,         // NW Europe — cool
-    "DE":220,"AT":220,"CH":220,"LU":220,
-    "FR":200,"PT":190,"ES":190,                  // Atlantic — cool blue
-    "IT":170,"GR":180,"HR":180,"ME":180,         // Med — teal
-    "HU":170,"SK":170,"CZ":170,"PL":200,
-    "AL":160,"BA":170,"RS":170,"MK":170,
-    "JP":350,"CN":340,"KR":340,"TH":320,         // Asia — warm pink/red
-    "IN":30, "ID":30,
-    "MA":30, "EG":35, "TN":35,                  // North Africa — amber
-    "ZA":20, "KE":20, "TZ":20,                  // Sub-Saharan — warm
-    "US":240,"CA":240,"MX":30,                  // Americas
-    "BR":120,"AR":200,"CL":200,
-    "AU":40, "NZ":200,
-  };
-  var hue = (iso && hues[iso.toUpperCase()]) || 28;
-  return "hsl(" + hue + ", 22%, 16%)";
-}
-
-// ── Film item selection + overlay card ────────────────────────────────────────
-
-function selectFilmItem(id) {
-  const v = vacations.find(function (x) { return x.id === id; });
-  if (!v) return;
-
-  activeFilmId = id;
-
-  // Update film strip active state
-  const items = els.filmItemsWrap ? els.filmItemsWrap.querySelectorAll(".film-item") : [];
-  items.forEach(function (el) {
-    el.classList.toggle("active", el.getAttribute("data-id") === id);
+function setActiveMarker(id) {
+  markersById.forEach((m, mid) => {
+    m.getElement()?.querySelector(".pm")?.classList.toggle("active", mid === id);
   });
+}
 
-  // Scroll film item into view
-  const activeEl = els.filmItemsWrap
-    ? els.filmItemsWrap.querySelector(".film-item.active")
-    : null;
-  if (activeEl) {
-    activeEl.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-  }
+function addMapNavControls() {
+  const wrap = document.createElement("div");
+  wrap.className = "map-nav-wrap";
+  wrap.innerHTML =
+    `<button class="map-nav-btn" id="map-nav-prev" title="Vorige reis">&#8249;</button>` +
+    `<button class="map-nav-btn" id="map-nav-next" title="Volgende reis">&#8250;</button>`;
+  document.getElementById("view-map").appendChild(wrap);
+  document.getElementById("map-nav-prev").addEventListener("click", () => navigateTrip(-1));
+  document.getElementById("map-nav-next").addEventListener("click", () => navigateTrip(1));
+}
 
-  // Update overlay card
-  updateOverlay(v);
-
-  // Zoom map and show route
+function navigateTrip(dir) {
+  if (!navVacations.length) return;
+  if (navIndex < 0) navIndex = 0;
+  else navIndex = (navIndex + dir + navVacations.length) % navVacations.length;
+  const v = navVacations[navIndex];
+  setActiveMarker(v.id);
   showRouteFor(v);
-  zoomToVacation(v);
+  openSheet(v);
 }
 
-function updateOverlay(v) {
-  if (!els.tripOverlay) return;
+function makePhotoIcon(v, isRecent) {
+  const hasPic  = v.pictures?.length && v.folder;
+  const imgSrc  = hasPic ? joinPath(v.folder, v.pictures[0]) : null;
+  const flagSrc = v.country ? "https://flagcdn.com/" + v.country.toLowerCase() + ".svg" : null;
 
-  // Photo
-  els.ovPhotoWrap.innerHTML = "";
+  let inner;
+  if (imgSrc) {
+    const fallback = flagSrc
+      ? `<img class="pm-flag" src="${flagSrc}" alt="" style="display:none" />`
+      : "";
+    inner = `<img src="${imgSrc}" alt="" onerror="this.style.display='none';var s=this.nextElementSibling;if(s)s.style.display=''" />${fallback}`;
+  } else if (flagSrc) {
+    inner = `<img class="pm-flag" src="${flagSrc}" alt="" />`;
+  } else {
+    inner = "";
+  }
+
+  const pulseClass = isRecent ? " pulse" : "";
+
+  return L.divIcon({
+    className: "pm-wrap",
+    html: `<div class="pm${pulseClass}">${inner}</div>`,
+    iconSize:    [42, 42],
+    iconAnchor:  [21, 21],
+    popupAnchor: [0, -24],
+  });
+}
+
+// ── Bottom sheet ───────────────────────────────────────────────────────────────
+
+function openSheet(v) {
+  sheetVacationId = v.id;
+  navIndex = navVacations.findIndex(x => x.id === v.id);
+
+  // Photo / flag hero
+  els.sheetPhotoWrap.innerHTML = "";
   const pics = v.pictures || [];
   if (pics.length && v.folder) {
     const img = document.createElement("img");
-    img.className = "ov-photo";
+    img.className = "sheet-photo";
     img.src = joinPath(v.folder, pics[0]);
     img.alt = v.title;
-    img.addEventListener("error", function () {
-      img.style.display = "none";
+    const flagSrcFallback = v.country
+      ? "https://flagcdn.com/" + v.country.toLowerCase() + ".svg" : null;
+    img.addEventListener("error", () => {
+      img.remove();
+      if (flagSrcFallback) showSheetFlagHero(flagSrcFallback);
+      else els.sheetPhotoWrap.style.display = "none";
     });
-    els.ovPhotoWrap.appendChild(img);
+    els.sheetPhotoWrap.appendChild(img);
+    const grad = document.createElement("div");
+    grad.className = "sheet-photo-gradient";
+    els.sheetPhotoWrap.appendChild(grad);
+    els.sheetPhotoWrap.style.display = "";
+  } else if (v.country) {
+    showSheetFlagHero("https://flagcdn.com/" + v.country.toLowerCase() + ".svg");
+  } else {
+    els.sheetPhotoWrap.style.display = "none";
   }
 
   // Flag
-  const flagSrc = flagUrl(v.country);
-  if (flagSrc) {
-    els.ovFlag.src = flagSrc;
-    els.ovFlag.alt = v.country || "";
-    els.ovFlag.style.display = "";
-  } else {
-    els.ovFlag.style.display = "none";
-  }
+  const flagSrc = v.country ? "https://flagcdn.com/" + v.country.toLowerCase() + ".svg" : "";
+  els.sheetFlag.src     = flagSrc;
+  els.sheetFlag.style.display = flagSrc ? "" : "none";
+  els.sheetLocation.textContent = (v.location || v.title || "").toUpperCase();
 
-  // Location + title
-  els.ovLocation.textContent = (v.location || v.title || "").toUpperCase();
-  els.ovTitle.textContent    = v.title || "";
-
-  // Dates
-  els.ovDates.textContent = formatDateRange(v.startDate, v.endDate);
-
-  // Description
-  els.ovDesc.textContent = v.description || "";
+  // Text
+  els.sheetTitle.textContent  = v.title || "";
+  els.sheetDates.textContent  = formatDateRange(v.startDate, v.endDate);
+  els.sheetDesc.textContent   = v.description || "";
 
   // Route
-  if (v.route && v.route.length > 1) {
-    const stops = v.route.map(function (p) { return p.name || ""; }).filter(Boolean);
-    els.ovRoute.innerHTML = '<span>Route</span>  ' + escapeHtml(stops.join(" → "));
-    els.ovRoute.style.display = "";
+  if (v.route?.length > 1) {
+    const stops = v.route.map(p => p.name || "").filter(Boolean);
+    els.sheetRoute.innerHTML = `<span>Route</span>  ${escapeHtml(stops.join(" → "))}`;
+    els.sheetRoute.style.display = "";
   } else {
-    els.ovRoute.style.display = "none";
+    els.sheetRoute.style.display = "none";
   }
 
   // Photo count
-  els.ovPhotoCount.textContent = pics.length
+  els.sheetPhotoCount.textContent = pics.length
     ? pics.length + (pics.length === 1 ? " foto" : " foto's")
-    : "Geen foto's";
+    : "";
 
-  // Detail button
-  els.ovDetailBtn.onclick = function () { openModal(v.id); };
+  // Zoom map + route
+  zoomToVacation(v);
+  showRouteFor(v);
 
-  // Show card
-  els.tripOverlay.classList.remove("hidden");
+  els.tripSheet.classList.add("open");
+  els.sheetBackdrop.classList.add("visible");
+}
+
+function showSheetFlagHero(src) {
+  const wrap = els.sheetPhotoWrap;
+  wrap.innerHTML = "";
+  const container = document.createElement("div");
+  container.className = "sheet-flag-hero";
+  const img = document.createElement("img");
+  img.src = src; img.alt = "";
+  img.addEventListener("error", () => { wrap.style.display = "none"; });
+  container.appendChild(img);
+  wrap.appendChild(container);
+  wrap.style.display = "";
+}
+
+function closeSheet() {
+  els.tripSheet.classList.remove("open");
+  els.sheetBackdrop.classList.remove("visible");
+  sheetVacationId = null;
+  clearRoute();
 }
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
 function showRouteFor(v) {
   clearRoute();
-  if (!v.route || !Array.isArray(v.route) || v.route.length < 2) return;
+  if (!v.route?.length || v.route.length < 2) return;
 
   const latlngs = v.route
-    .filter(function (p) { return typeof p.lat === "number" && typeof p.lon === "number"; })
-    .map(function (p) { return [p.lat, p.lon]; });
+    .filter(p => typeof p.lat === "number" && typeof p.lon === "number")
+    .map(p => [p.lat, p.lon]);
   if (latlngs.length < 2) return;
 
-  L.polyline(latlngs, {
-    color: "#c8a060",
-    weight: 2.5,
-    opacity: 0.75,
-    dashArray: "6, 8",
-  }).addTo(routesLayer);
+  L.polyline(latlngs, { color: "#c8a060", weight: 2.5, opacity: .8, dashArray: "6,8" }).addTo(routesLayer);
 
-  v.route.forEach(function (pt) {
-    if (typeof pt.lat !== "number" || typeof pt.lon !== "number") return;
-    const dot = L.circleMarker([pt.lat, pt.lon], {
-      radius: 4,
-      color: "#e8c890",
-      weight: 1.5,
-      fillColor: "#c8a060",
-      fillOpacity: 1,
-    }).addTo(routesLayer);
-    dot.bindTooltip(escapeHtml(pt.name || ""), {
-      direction: "top", offset: [0, -6], className: "route-tooltip"
-    });
+  v.route.forEach(pt => {
+    if (typeof pt.lat !== "number") return;
+    L.circleMarker([pt.lat, pt.lon], {
+      radius: 4, color: "#e8c890", weight: 1.5, fillColor: "#c8a060", fillOpacity: 1,
+    })
+    .bindTooltip(escapeHtml(pt.name || ""), { direction: "top", offset: [0,-6], className: "route-tooltip" })
+    .addTo(routesLayer);
   });
-
-  activeRouteId = v.id;
 }
 
-function clearRoute() {
-  if (routesLayer) routesLayer.clearLayers();
-  activeRouteId = null;
-}
+function clearRoute() { routesLayer?.clearLayers(); }
 
 function zoomToVacation(v) {
   if (!map) return;
   const pts = [];
-  if (v.route && Array.isArray(v.route)) {
-    for (const p of v.route) {
-      if (typeof p.lat === "number" && typeof p.lon === "number") pts.push([p.lat, p.lon]);
-    }
-  }
-  if (!pts.length && typeof v.lat === "number" && typeof v.lon === "number") {
-    pts.push([v.lat, v.lon]);
-  }
-  if (pts.length === 1) {
-    map.flyTo(pts[0], CITY_ZOOM, { duration: 0.7 });
-  } else if (pts.length > 1) {
-    map.flyToBounds(L.latLngBounds(pts), { padding: [80, 80], duration: 0.7, maxZoom: 14 });
-  }
+  v.route?.forEach(p => { if (typeof p.lat === "number") pts.push([p.lat, p.lon]); });
+  if (!pts.length && typeof v.lat === "number") pts.push([v.lat, v.lon]);
+  if (pts.length === 1)  map.flyTo(pts[0], CITY_ZOOM, { duration: 0.8 });
+  else if (pts.length > 1) map.flyToBounds(L.latLngBounds(pts), { padding: [80,80], duration: 0.8, maxZoom: 14 });
 }
 
 // ── Timeline ───────────────────────────────────────────────────────────────────
@@ -573,21 +478,21 @@ function renderTimeline(yearFilter) {
 
   const years = [];
   const seenY = new Set();
-  for (const v of vacations) {
+  vacations.forEach(v => {
     const y = (v.startDate || "").slice(0, 4);
     if (y && !seenY.has(y)) { seenY.add(y); years.push(y); }
-  }
+  });
 
   const filtered = activeYearFilter
-    ? vacations.filter(function (v) { return (v.startDate || "").startsWith(activeYearFilter); })
+    ? vacations.filter(v => (v.startDate || "").startsWith(activeYearFilter))
     : vacations;
 
   const grouped = {};
-  for (const v of filtered) {
+  filtered.forEach(v => {
     const y = (v.startDate || "?").slice(0, 4);
     if (!grouped[y]) grouped[y] = [];
     grouped[y].push(v);
-  }
+  });
   const groupYears = Object.keys(grouped).sort().reverse();
 
   const filtersDiv = document.createElement("div");
@@ -596,31 +501,28 @@ function renderTimeline(yearFilter) {
   const allChip = document.createElement("button");
   allChip.className = "tl-filter-chip" + (!activeYearFilter ? " active" : "");
   allChip.textContent = "Alle reizen";
-  allChip.addEventListener("click", function () { renderTimeline(null); });
+  allChip.addEventListener("click", () => renderTimeline(null));
   filtersDiv.appendChild(allChip);
 
-  for (const y of years) {
+  years.forEach(y => {
     const chip = document.createElement("button");
     chip.className = "tl-filter-chip" + (activeYearFilter === y ? " active" : "");
     chip.textContent = y;
-    chip.addEventListener("click", function () { renderTimeline(y); });
+    chip.addEventListener("click", () => renderTimeline(y));
     filtersDiv.appendChild(chip);
-  }
+  });
 
   const wrap = document.createElement("div");
   wrap.className = "timeline-line";
-
   let idx = 0;
-  for (const y of groupYears) {
-    const yearLabel = document.createElement("div");
-    yearLabel.className = "tl-year";
-    yearLabel.textContent = y;
-    wrap.appendChild(yearLabel);
-    for (const v of grouped[y]) {
-      wrap.appendChild(buildTlItem(v, idx));
-      idx++;
-    }
-  }
+
+  groupYears.forEach(y => {
+    const lbl = document.createElement("div");
+    lbl.className = "tl-year";
+    lbl.textContent = y;
+    wrap.appendChild(lbl);
+    grouped[y].forEach(v => { wrap.appendChild(buildTlItem(v, idx++)); });
+  });
 
   if (!filtered.length) {
     const msg = document.createElement("div");
@@ -642,44 +544,36 @@ function buildTlItem(v, idx) {
   item.setAttribute("role", "button");
   item.style.animationDelay = (idx * 0.04) + "s";
 
-  const routeHtml = (v.route && v.route.length > 1)
-    ? '<div class="tl-route">Route: ' +
-        v.route.map(function (p) { return escapeHtml(p.name || ""); }).join(" → ") +
-      "</div>"
-    : "";
-
-  const photoCount = (v.pictures || []).length;
-  const badgeHtml = '<span class="tl-badge' + (photoCount > 0 ? " has-photos" : "") + '">' +
-    (photoCount > 0 ? "📷 " + photoCount : "Geen foto's") + "</span>";
+  const route = v.route?.length > 1
+    ? `<div class="tl-route">Route: ${v.route.map(p => escapeHtml(p.name || "")).join(" → ")}</div>` : "";
+  const cnt   = (v.pictures || []).length;
+  const badge = `<span class="tl-badge${cnt ? " has-photos" : ""}">${cnt ? "📷 " + cnt : "Geen foto's"}</span>`;
+  const flag  = flagImg(v.country, "tl-flag-img");
 
   item.innerHTML =
-    "<h3>" + flagImg(v.country, "tl-flag-img") + " " + escapeHtml(v.title) + badgeHtml + "</h3>" +
-    '<div class="tl-meta">' + escapeHtml(formatDateRange(v.startDate, v.endDate)) + "</div>" +
-    "<p>" + escapeHtml(v.description || "") + "</p>" +
-    routeHtml;
+    `<h3>${flag} ${escapeHtml(v.title)}${badge}</h3>` +
+    `<div class="tl-meta">${escapeHtml(formatDateRange(v.startDate, v.endDate))}</div>` +
+    `<p>${escapeHtml(v.description || "")}</p>${route}`;
 
-  item.addEventListener("click", function () { openModal(v.id); });
-  item.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(v.id); }
-  });
-
+  item.addEventListener("click", () => openModal(v.id));
+  item.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(v.id); } });
   return item;
 }
 
 // ── Modal ──────────────────────────────────────────────────────────────────────
 
 function openModal(id) {
-  const v = vacations.find(function (x) { return x.id === id; });
+  const v = vacations.find(x => x.id === id);
   if (!v) return;
   currentModalId = id;
 
   els.modalTitle.innerHTML = flagImg(v.country, "modal-flag-img") + " " + escapeHtml(v.title);
-  els.modalMeta.textContent = formatDateRange(v.startDate, v.endDate) + " " + (v.location || "");
+  els.modalMeta.textContent = formatDateRange(v.startDate, v.endDate) + "  " + (v.location || "");
 
   let descHtml = escapeHtml(v.description || "");
-  if (v.route && v.route.length > 1) {
-    const r = v.route.map(function (p) { return escapeHtml(p.name || ""); }).join(" → ");
-    descHtml += '<div class="modal-route"><b>Route:</b> ' + r + "</div>";
+  if (v.route?.length > 1) {
+    const r = v.route.map(p => escapeHtml(p.name || "")).join(" → ");
+    descHtml += `<div class="modal-route"><b>Route:</b> ${r}</div>`;
   }
   els.modalDesc.innerHTML = descHtml;
 
@@ -691,28 +585,22 @@ function openModal(id) {
     empty.textContent = "Nog geen foto's voor deze reis.";
     els.modalGallery.appendChild(empty);
   } else {
-    const srcs = pics.map(function (p) { return joinPath(v.folder, p); });
-    const alts = pics.map(function (p) { return v.title + " - " + p; });
-    for (let i = 0; i < pics.length; i++) {
-      const isVid = srcs[i].endsWith(".mp4");
-      if (isVid) {
+    const srcs = pics.map(p => joinPath(v.folder, p));
+    const alts = pics.map(p => v.title + " - " + p);
+    srcs.forEach((src, i) => {
+      if (src.endsWith(".mp4")) {
         const vid = document.createElement("video");
-        vid.src = srcs[i];
-        vid.controls = true;
-        vid.addEventListener("error", function () { vid.style.display = "none"; });
+        vid.src = src; vid.controls = true;
+        vid.addEventListener("error", () => vid.style.display = "none");
         els.modalGallery.appendChild(vid);
       } else {
         const img = document.createElement("img");
-        img.src = srcs[i];
-        img.alt = alts[i];
-        img.loading = "lazy";
-        (function (idx) {
-          img.addEventListener("click", function () { openLightbox(srcs, alts, idx); });
-        })(i);
-        img.addEventListener("error", function () { img.style.display = "none"; });
+        img.src = src; img.alt = alts[i]; img.loading = "lazy";
+        img.addEventListener("click", () => openLightbox(srcs, alts, i));
+        img.addEventListener("error", () => img.style.display = "none");
         els.modalGallery.appendChild(img);
       }
-    }
+    });
   }
 
   els.modal.classList.add("open");
@@ -723,9 +611,7 @@ function closeModal() { els.modal.classList.remove("open"); }
 // ── Lightbox ───────────────────────────────────────────────────────────────────
 
 function openLightbox(srcs, alts, index) {
-  lightboxPhotos = srcs;
-  lightboxAlts   = alts;
-  lightboxIndex  = index;
+  lightboxPhotos = srcs; lightboxAlts = alts; lightboxIndex = index;
   showLightboxFrame();
   els.lightbox.classList.add("open");
 }
@@ -737,17 +623,14 @@ function navigateLightbox(dir) {
 }
 
 function showLightboxFrame() {
-  const src = lightboxPhotos[lightboxIndex];
+  const src   = lightboxPhotos[lightboxIndex];
   const isVid = src.endsWith(".mp4");
   if (isVid) {
     els.lightboxImg.style.display = "none";
-    els.lightboxVideo.style.display = "";
-    els.lightboxVideo.src = src;
+    els.lightboxVideo.style.display = ""; els.lightboxVideo.src = src;
   } else {
-    els.lightboxVideo.pause();
-    els.lightboxVideo.style.display = "none";
-    els.lightboxImg.style.display = "";
-    els.lightboxImg.src = src;
+    els.lightboxVideo.pause(); els.lightboxVideo.style.display = "none";
+    els.lightboxImg.style.display = ""; els.lightboxImg.src = src;
     els.lightboxImg.alt = lightboxAlts[lightboxIndex] || "";
   }
   const total = lightboxPhotos.length;
@@ -756,250 +639,181 @@ function showLightboxFrame() {
   els.lbNext.classList.toggle("hidden", total <= 1);
 }
 
-function closeLightbox() {
-  els.lightbox.classList.remove("open");
-  els.lightboxVideo.pause();
-}
+function closeLightbox() { els.lightbox.classList.remove("open"); els.lightboxVideo.pause(); }
 
 // ── World map ──────────────────────────────────────────────────────────────────
 
 function getVisitedNums() {
-  var set = new Set();
-  for (var i = 0; i < vacations.length; i++) {
-    var v = vacations[i];
-    var codes = Array.isArray(v.countries) ? v.countries : (v.country ? [v.country] : []);
-    for (var j = 0; j < codes.length; j++) {
-      var num = ISO2_TO_NUM[codes[j].toUpperCase()];
-      if (num) set.add(num);
-    }
-  }
+  const set = new Set();
+  vacations.forEach(v => {
+    const codes = Array.isArray(v.countries) ? v.countries : (v.country ? [v.country] : []);
+    codes.forEach(c => { const n = ISO2_TO_NUM[c.toUpperCase()]; if (n) set.add(n); });
+  });
   return set;
 }
 
 function initWorldMap() {
-  var wrap = document.getElementById("world-svg-wrap");
-  if (!wrap) return;
   if (worldData) { drawWorldMap(worldData); return; }
   fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
-    .then(function (r) { return r.json(); })
-    .then(function (data) { worldData = data; drawWorldMap(data); })
-    .catch(function (err) { console.warn("Wereldkaart kon niet laden:", err); });
+    .then(r => r.json())
+    .then(data => { worldData = data; drawWorldMap(data); })
+    .catch(err => console.warn("Wereldkaart kon niet laden:", err));
 }
 
 function drawWorldMap(world) {
-  var wrap = document.getElementById("world-svg-wrap");
-  if (!wrap) return;
-
-  var visited = getVisitedNums();
+  const visited = getVisitedNums();
   if (els.worldVisitedLabel) els.worldVisitedLabel.textContent = visited.size + " bezocht";
 
-  var W = 960, H = 500;
-  var projection = d3.geoNaturalEarth1().scale(153).translate([W / 2, H / 2]);
-  var pathGen    = d3.geoPath().projection(projection);
-  var countries  = topojson.feature(world, world.objects.countries);
-  var borders    = topojson.mesh(world, world.objects.countries, function (a, b) { return a !== b; });
+  const W = 960, H = 500;
+  const projection = d3.geoNaturalEarth1().scale(153).translate([W/2, H/2]);
+  const pathGen    = d3.geoPath().projection(projection);
+  const countries  = topojson.feature(world, world.objects.countries);
+  const borders    = topojson.mesh(world, world.objects.countries, (a,b) => a !== b);
 
-  var svg = d3.select("#world-svg")
-    .attr("viewBox", "0 0 " + W + " " + H)
+  const svg = d3.select("#world-svg")
+    .attr("viewBox", `0 0 ${W} ${H}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
-
   svg.selectAll("*").remove();
 
-  var g = svg.append("g");
-  worldSvg = svg;
-  worldProjection = projection;
-  worldZoom = d3.zoom()
-    .scaleExtent([1, 8])
-    .translateExtent([[0, 0], [W, H]])
-    .on("zoom", function (event) { g.attr("transform", event.transform); });
+  const g = svg.append("g");
+  worldSvg = svg; worldProjection = projection;
+  worldZoom = d3.zoom().scaleExtent([1,8]).translateExtent([[0,0],[W,H]])
+    .on("zoom", e => g.attr("transform", e.transform));
   svg.call(worldZoom);
 
-  g.append("path")
-    .datum({ type: "Sphere" })
-    .attr("d", pathGen)
-    .attr("fill", "#07090f");
+  g.append("path").datum({type:"Sphere"}).attr("d", pathGen).attr("fill","#07090f");
+  g.append("path").datum(d3.geoGraticule()()).attr("d", pathGen)
+    .attr("fill","none").attr("stroke","#0f1520").attr("stroke-width",.35);
 
-  g.append("path")
-    .datum(d3.geoGraticule()())
-    .attr("d", pathGen)
-    .attr("fill", "none")
-    .attr("stroke", "#0f1520")
-    .attr("stroke-width", 0.35);
+  const VISITED   = "#c8a060";
+  const UNVISITED = "#1a1c24";
 
-  var VISITED_COLOR   = "#c8a060";
-  var UNVISITED_COLOR = "#1a1c24";
-
-  function polycentroid(ring) {
-    var n = ring.length, lx = 0, ly = 0;
-    for (var k = 0; k < n; k++) { lx += ring[k][0]; ly += ring[k][1]; }
-    return [lx / n, ly / n];
+  function centroid(ring) {
+    let lx=0,ly=0; ring.forEach(([x,y])=>{lx+=x;ly+=y;});
+    return [lx/ring.length, ly/ring.length];
   }
 
-  function addCountryPath(geom, id, isVis) {
-    var name = LAND_NAMEN[id] || "";
+  function addPath(geom, id, isVis) {
+    const name = LAND_NAMEN[id] || "";
     g.append("path")
-      .datum({ type: "Feature", geometry: geom })
+      .datum({type:"Feature", geometry:geom})
       .attr("class", "world-country" + (isVis ? " visited" : ""))
       .attr("d", pathGen)
-      .attr("fill", isVis ? VISITED_COLOR : UNVISITED_COLOR)
-      .attr("stroke", "none")
-      .on("mousemove", function (event) {
+      .attr("fill", isVis ? VISITED : UNVISITED)
+      .attr("stroke","none")
+      .on("mousemove", e => {
         if (!name || !els.worldTooltip) return;
         els.worldTooltip.textContent = name + (isVis ? " ✓" : "");
         els.worldTooltip.style.opacity = "1";
-        els.worldTooltip.style.left = (event.clientX + 14) + "px";
-        els.worldTooltip.style.top  = (event.clientY - 36) + "px";
+        els.worldTooltip.style.left   = (e.clientX + 14) + "px";
+        els.worldTooltip.style.top    = (e.clientY - 36) + "px";
       })
-      .on("mouseleave", function () {
-        if (els.worldTooltip) els.worldTooltip.style.opacity = "0";
-      });
+      .on("mouseleave", () => { if (els.worldTooltip) els.worldTooltip.style.opacity = "0"; });
   }
 
-  countries.features.forEach(function (feature) {
-    var id     = +feature.id;
-    var isVis  = visited.has(id);
-    var bounds = MAINLAND_BOUNDS[id];
-    var geom   = feature.geometry;
-
-    if (!isVis || !bounds || !geom || geom.type !== "MultiPolygon") {
-      addCountryPath(geom, id, isVis);
-      return;
-    }
-
-    var mainland = [], overseas = [];
-    geom.coordinates.forEach(function (poly) {
-      var c = polycentroid(poly[0]);
-      var inMain = c[0] >= bounds.minLon && c[0] <= bounds.maxLon &&
-                   c[1] >= bounds.minLat && c[1] <= bounds.maxLat;
-      (inMain ? mainland : overseas).push(poly);
+  countries.features.forEach(feat => {
+    const id     = +feat.id;
+    const isVis  = visited.has(id);
+    const bounds = MAINLAND_BOUNDS[id];
+    const geom   = feat.geometry;
+    if (!isVis || !bounds || geom?.type !== "MultiPolygon") { addPath(geom, id, isVis); return; }
+    const main=[], over=[];
+    geom.coordinates.forEach(poly => {
+      const c = centroid(poly[0]);
+      (c[0]>=bounds.minLon&&c[0]<=bounds.maxLon&&c[1]>=bounds.minLat&&c[1]<=bounds.maxLat ? main : over).push(poly);
     });
-
-    if (mainland.length) addCountryPath({ type: "MultiPolygon", coordinates: mainland }, id, true);
-    if (overseas.length) addCountryPath({ type: "MultiPolygon", coordinates: overseas }, id, false);
+    if (main.length) addPath({type:"MultiPolygon",coordinates:main}, id, true);
+    if (over.length) addPath({type:"MultiPolygon",coordinates:over}, id, false);
   });
 
-  g.append("path")
-    .datum(borders)
-    .attr("d", pathGen)
-    .attr("fill", "none")
-    .attr("stroke", "#07090f")
-    .attr("stroke-width", 0.45);
+  g.append("path").datum(borders).attr("d",pathGen)
+    .attr("fill","none").attr("stroke","#07090f").attr("stroke-width",.45);
 
   renderWorldStats(visited);
 }
 
 function renderWorldStats(visitedNums) {
-  var bar = document.getElementById("world-stats-bar");
+  const bar = document.getElementById("world-stats-bar");
   if (!bar) return;
 
-  var visitedIso2 = new Set();
-  for (var iso2 in ISO2_TO_NUM) {
-    if (visitedNums.has(ISO2_TO_NUM[iso2])) visitedIso2.add(iso2);
-  }
+  const visitedIso2 = new Set();
+  Object.entries(ISO2_TO_NUM).forEach(([iso,num]) => { if (visitedNums.has(num)) visitedIso2.add(iso); });
 
-  function pct(v, t) { return t === 0 ? "0%" : Math.round(v / t * 100) + "%"; }
+  const pct = (v,t) => t===0 ? "0%" : Math.round(v/t*100)+"%";
+  let totalAll=0, visitedAll=0;
+  const contStats = {};
 
-  var totalAll = 0, visitedAll = 0;
-  var contStats = {};
-  for (var cont in CONTINENT_COUNTRIES) {
-    var arr = CONTINENT_COUNTRIES[cont];
-    var vis = arr.filter(function (c) { return visitedIso2.has(c); }).length;
-    contStats[cont] = { visited: vis, total: arr.length };
-    totalAll  += arr.length;
-    visitedAll += vis;
-  }
+  Object.entries(CONTINENT_COUNTRIES).forEach(([cont, arr]) => {
+    const vis = arr.filter(c => visitedIso2.has(c)).length;
+    contStats[cont] = {visited:vis, total:arr.length};
+    totalAll += arr.length; visitedAll += vis;
+  });
 
-  var html = '<div class="world-stat-item global" data-cont="world"><strong>Wereld&nbsp;' +
-    visitedAll + "/" + totalAll + "</strong>&nbsp;" + pct(visitedAll, totalAll) + "</div>";
-  for (var c in contStats) {
-    var s = contStats[c];
-    html += '<div class="world-stat-item" data-cont="' + c + '"><span class="stat-cont">' +
-      c + "</span><strong>" + s.visited + "/" + s.total + "</strong>&nbsp;" + pct(s.visited, s.total) + "</div>";
-  }
+  let html = `<div class="world-stat-item global" data-cont="world"><strong>Wereld&nbsp;${visitedAll}/${totalAll}</strong>&nbsp;${pct(visitedAll,totalAll)}</div>`;
+  Object.entries(contStats).forEach(([c,s]) => {
+    html += `<div class="world-stat-item" data-cont="${c}"><span class="stat-cont">${c}</span><strong>${s.visited}/${s.total}</strong>&nbsp;${pct(s.visited,s.total)}</div>`;
+  });
   bar.innerHTML = html;
 
-  bar.addEventListener("click", function (e) {
-    var item = e.target.closest(".world-stat-item");
+  bar.addEventListener("click", e => {
+    const item = e.target.closest(".world-stat-item");
     if (!item) return;
-    var cont = item.getAttribute("data-cont");
-    if (cont === "world") {
-      if (worldSvg && worldZoom) {
-        worldSvg.transition().duration(600).call(worldZoom.transform, d3.zoomIdentity);
-      }
-    } else {
-      zoomToContinent(cont);
-    }
+    const cont = item.dataset.cont;
+    if (cont === "world") worldSvg?.transition().duration(600).call(worldZoom.transform, d3.zoomIdentity);
+    else zoomToContinent(cont);
   });
 }
 
 function zoomToContinent(cont) {
   if (!worldProjection || !worldZoom || !worldSvg) return;
-  var bounds = CONTINENT_BOUNDS[cont];
+  const bounds = CONTINENT_BOUNDS[cont];
   if (!bounds) return;
-
-  var W = 960, H = 500;
-  var corners = [
-    [bounds[0][0], bounds[0][1]], [bounds[1][0], bounds[0][1]],
-    [bounds[1][0], bounds[1][1]], [bounds[0][0], bounds[1][1]]
-  ];
-  var projected = corners.map(function (c) { return worldProjection(c); });
-  var xs = projected.map(function (p) { return p[0]; });
-  var ys = projected.map(function (p) { return p[1]; });
-  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
-  var y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
-
-  var scale = Math.min(8, 0.88 * Math.min(W / (x1 - x0), H / (y1 - y0)));
-  var tx = W / 2 - scale * (x0 + x1) / 2;
-  var ty = H / 2 - scale * (y0 + y1) / 2;
-
-  worldSvg.transition().duration(750).call(
-    worldZoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale)
-  );
+  const W=960, H=500;
+  const corners = [[bounds[0][0],bounds[0][1]],[bounds[1][0],bounds[0][1]],[bounds[1][0],bounds[1][1]],[bounds[0][0],bounds[1][1]]];
+  const proj    = corners.map(c => worldProjection(c));
+  const xs = proj.map(p=>p[0]), ys = proj.map(p=>p[1]);
+  const x0=Math.min(...xs), x1=Math.max(...xs), y0=Math.min(...ys), y1=Math.max(...ys);
+  const scale = Math.min(8, .88*Math.min(W/(x1-x0), H/(y1-y0)));
+  const tx = W/2 - scale*(x0+x1)/2, ty = H/2 - scale*(y0+y1)/2;
+  worldSvg.transition().duration(750).call(worldZoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+function flagImg(iso, cls) {
+  if (!iso || iso.length !== 2) return "";
+  return `<img class="${cls||"flag"}" src="https://flagcdn.com/${iso.toLowerCase()}.svg" alt="${escapeAttr(iso)}" />`;
+}
+
 function joinPath(folder, file) {
-  if (!folder) return file;
-  let f = folder;
-  while (f.endsWith("/")) f = f.slice(0, -1);
-  let g = String(file);
-  while (g.startsWith("/")) g = g.slice(1);
-  return f + "/" + g;
+  const f = (folder || "").replace(/\/+$/, "");
+  const g = String(file).replace(/^\/+/, "");
+  return f ? f + "/" + g : g;
 }
 
 function formatDateRange(start, end) {
   if (!start && !end) return "";
   const s = start ? new Date(start) : null;
   const e = end   ? new Date(end)   : null;
-  const opts = { year: "numeric", month: "short", day: "numeric" };
-  const locale = "nl-NL";
+  const opts = {year:"numeric", month:"short", day:"numeric"};
+  const loc  = "nl-NL";
   if (s && e) {
-    if (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()) {
-      const month = s.toLocaleDateString(locale, { month: "short" });
-      return s.getDate() + "–" + e.getDate() + " " + month + " " + s.getFullYear();
+    if (s.getFullYear()===e.getFullYear() && s.getMonth()===e.getMonth()) {
+      return `${s.getDate()}–${e.getDate()} ${s.toLocaleDateString(loc,{month:"short"})} ${s.getFullYear()}`;
     }
-    return s.toLocaleDateString(locale, opts) + " – " + e.toLocaleDateString(locale, opts);
+    return `${s.toLocaleDateString(loc,opts)} – ${e.toLocaleDateString(loc,opts)}`;
   }
-  return (s || e).toLocaleDateString(locale, opts);
+  return (s||e).toLocaleDateString(loc, opts);
 }
 
 function escapeHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .split("&").join("&amp;")
-    .split("<").join("&lt;")
-    .split(">").join("&gt;")
-    .split('"').join("&quot;")
-    .split("'").join("&#039;");
+  return str==null ? "" : String(str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;").replace(/'/g,"&#039;");
 }
-
 function escapeAttr(str) { return escapeHtml(str); }
 
 function showLoadError(err) {
-  const main = document.querySelector("main");
-  const msg = (err && err.message) ? err.message : String(err);
-  main.innerHTML =
-    '<div class="notice"><h2>Reisdata kon niet geladen worden</h2>' +
-    "<p>Foutmelding: " + escapeHtml(msg) + "</p></div>";
+  document.querySelector("main").innerHTML =
+    `<div class="notice"><h2>Reisdata kon niet geladen worden</h2><p>${escapeHtml(err?.message||String(err))}</p></div>`;
 }

@@ -14,7 +14,8 @@
       "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\oslo-2024\\\\.gitkeep\" -Force)",
       "PowerShell(New-Item -ItemType File -Path \"C:\\\\Users\\\\juulv\\\\Github\\\\Vacations\\\\pictures\\\\tallinn-2023\\\\.gitkeep\" -Force)",
       "PowerShell(\"Done\")",
-      "mcp__visualize__read_me"
+      "mcp__visualize__read_me",
+      "mcp__Claude_Preview__preview_start"
     ]
   }
 }
