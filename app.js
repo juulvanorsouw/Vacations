@@ -273,10 +273,22 @@ function renderMap() {
     const isRecent = v.id === mostRecentId;
     const marker   = L.marker([v.lat, v.lon], { icon: makePhotoIcon(v, isRecent) });
 
-    marker.on("click", () => {
+    const onTap = () => {
       setActiveMarker(v.id);
       showRouteFor(v);
       openSheet(v);
+    };
+    marker.on("click", onTap);
+    // Mobile Safari needs touchend on the icon element directly
+    marker.on("add", () => {
+      const el = marker.getElement();
+      if (!el) return;
+      let moved = false;
+      el.addEventListener("touchstart", () => { moved = false; }, { passive: true });
+      el.addEventListener("touchmove",  () => { moved = true;  }, { passive: true });
+      el.addEventListener("touchend",   e  => {
+        if (!moved) { e.preventDefault(); onTap(); }
+      });
     });
 
     marker.addTo(map);
