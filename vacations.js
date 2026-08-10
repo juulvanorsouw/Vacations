@@ -23,14 +23,14 @@ window.VACATIONS = {
     },
     {
       "id": "roemenia-2026",
-      "title": "Roemenië",
-      "location": "Roemenië",
+      "title": "Brașov",
+      "location": "Brașov, Roemenië",
       "country": "RO",
-      "lat": 45.9432,
-      "lon": 24.9668,
+      "lat": 45.6427,
+      "lon": 25.5887,
       "startDate": "2026-06-30",
       "endDate": "2026-08-06",
-      "description": "Een lange reis door Roemenië, meerdere plaatsen bezocht.",
+      "description": "Een lange reis door Roemenië met Boekarest, Bușteni en Brașov.",
       "folder": "pictures/roemenia-2026",
       "pictures": [
         "WhatsApp Image 2026-08-09 at 10.39.12.jpeg",
@@ -39,6 +39,12 @@ window.VACATIONS = {
         "WhatsApp Image 2026-08-10 at 15.22.52 (2).jpeg",
         "WhatsApp Image 2026-08-10 at 15.24.11.jpeg",
         "WhatsApp Video 2026-08-09 at 10.39.28.mp4"
+      ],
+      "route": [
+        { "name": "Boekarest", "lat": 44.4268, "lon": 26.1025 },
+        { "name": "Brașov",    "lat": 45.6427, "lon": 25.5887 },
+        { "name": "Bușteni",  "lat": 45.4067, "lon": 25.5389 },
+        { "name": "Boekarest", "lat": 44.4268, "lon": 26.1025 }
       ]
     },
     {
