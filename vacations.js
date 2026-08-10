@@ -9,6 +9,39 @@
 window.VACATIONS = {
   "vacations": [
     {
+      "id": "alsace-2026",
+      "title": "Alsace",
+      "location": "Alsace, Frankrijk",
+      "country": "FR",
+      "lat": 48.0794,
+      "lon": 7.3585,
+      "startDate": "2026-08-08",
+      "endDate": "2026-08-14",
+      "description": "Opnieuw een week door de Alsace.",
+      "folder": "pictures/alsace-2026",
+      "pictures": ["WhatsApp Image 2026-08-10 at 15.22.52.jpeg"]
+    },
+    {
+      "id": "roemenia-2026",
+      "title": "Roemenië",
+      "location": "Roemenië",
+      "country": "RO",
+      "lat": 45.9432,
+      "lon": 24.9668,
+      "startDate": "2026-06-30",
+      "endDate": "2026-08-06",
+      "description": "Een lange reis door Roemenië, meerdere plaatsen bezocht.",
+      "folder": "pictures/roemenia-2026",
+      "pictures": [
+        "WhatsApp Image 2026-08-09 at 10.39.12.jpeg",
+        "WhatsApp Image 2026-08-10 at 15.21.55.jpeg",
+        "WhatsApp Image 2026-08-10 at 15.22.52 (1).jpeg",
+        "WhatsApp Image 2026-08-10 at 15.22.52 (2).jpeg",
+        "WhatsApp Image 2026-08-10 at 15.24.11.jpeg",
+        "WhatsApp Video 2026-08-09 at 10.39.28.mp4"
+      ]
+    },
+    {
       "id": "oslo-2026-jun",
       "title": "Oslo",
       "location": "Oslo, Noorwegen",
