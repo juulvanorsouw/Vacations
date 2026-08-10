@@ -465,11 +465,14 @@ function showRouteFor(v) {
 
   v.route.forEach(pt => {
     if (typeof pt.lat !== "number") return;
-    L.circleMarker([pt.lat, pt.lon], {
-      radius: 4, color: "#e8c890", weight: 1.5, fillColor: "#c8a060", fillOpacity: 1,
-    })
-    .bindTooltip(escapeHtml(pt.name || ""), { direction: "top", offset: [0,-6], className: "route-tooltip" })
-    .addTo(routesLayer);
+    const isStop = Boolean(pt.name);
+    const marker = L.circleMarker([pt.lat, pt.lon], {
+      radius: isStop ? 4 : 2, color: "#e8c890", weight: 1.5, fillColor: "#c8a060", fillOpacity: isStop ? 1 : .6,
+    });
+    if (isStop) {
+      marker.bindTooltip(escapeHtml(pt.name), { direction: "top", offset: [0,-6], className: "route-tooltip" });
+    }
+    marker.addTo(routesLayer);
   });
 }
 
@@ -558,7 +561,7 @@ function buildTlItem(v, idx) {
   item.style.animationDelay = (idx * 0.04) + "s";
 
   const route = v.route?.length > 1
-    ? `<div class="tl-route">Route: ${v.route.map(p => escapeHtml(p.name || "")).join(" → ")}</div>` : "";
+    ? `<div class="tl-route">Route: ${escapeHtml(v.route.map(p => p.name || "").filter(Boolean).join(" → "))}</div>` : "";
   const cnt   = (v.pictures || []).length;
   const badge = `<span class="tl-badge${cnt ? " has-photos" : ""}">${cnt ? "📷 " + cnt : "Geen foto's"}</span>`;
   const flag  = flagImg(v.country, "tl-flag-img");
@@ -585,7 +588,7 @@ function openModal(id) {
 
   let descHtml = escapeHtml(v.description || "");
   if (v.route?.length > 1) {
-    const r = v.route.map(p => escapeHtml(p.name || "")).join(" → ");
+    const r = escapeHtml(v.route.map(p => p.name || "").filter(Boolean).join(" → "));
     descHtml += `<div class="modal-route"><b>Route:</b> ${r}</div>`;
   }
   els.modalDesc.innerHTML = descHtml;
