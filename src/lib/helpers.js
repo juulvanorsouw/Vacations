@@ -1,7 +1,13 @@
 export function joinPath(folder, file) {
-  const f = (folder || "").replace(/\/+$/, "");
+  // Build an absolute path from the site root (using Vite's configured base)
+  // instead of a relative one — a relative path resolves against whatever
+  // the current document URL happens to be, which breaks under GitHub Pages'
+  // subpath hosting if the URL is ever missing its trailing slash.
+  const base = import.meta.env.BASE_URL.replace(/\/+$/, "");
+  const f = (folder || "").replace(/^\/+/, "").replace(/\/+$/, "");
   const g = String(file).replace(/^\/+/, "");
-  return f ? f + "/" + g : g;
+  const path = f ? f + "/" + g : g;
+  return base + "/" + path;
 }
 
 export function flagSrc(iso) {
