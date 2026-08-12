@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Ported 1:1 from the original index.html palette */
+  --bg:        #0c0a08;
+  --panel:     #181410;
+  --panel-2:   #201c14;
+  --border:    #2a2018;
+  --border-h:  #3a3020;
+  --text:      #e8d8c0;
+  --muted:     #6a5840;
+  --muted-2:   #4a3828;
+  --gold:      #c8a060;
+  --gold-l:    #e8c890;
+  --gold-dim:  #2e2010;
+  --shadow:    0 16px 48px rgba(0,0,0,.75);
+  --shadow-sm: 0 4px 16px rgba(0,0,0,.5);
+  --r:         14px;
+  --r-sm:      8px;
+
+  /* shadcn semantic tokens mapped onto the palette above */
+  --background:            var(--bg);
+  --foreground:            var(--text);
+  --card:                  var(--panel);
+  --card-foreground:       var(--text);
+  --popover:               var(--panel);
+  --popover-foreground:    var(--text);
+  --primary:               var(--gold);
+  --primary-foreground:    #1a1408;
+  --secondary:             var(--panel-2);
+  --secondary-foreground:  var(--text);
+  --muted-bg:              var(--panel-2);
+  --muted-foreground:      var(--muted);
+  --accent:                var(--gold-dim);
+  --accent-foreground:     var(--gold);
+  --destructive:           #c04030;
+  --destructive-foreground:#fff;
+  --border-color:          var(--border);
+  --input:                 var(--border);
+  --ring:                  var(--gold);
+  --radius:                0.875rem;
+}
+
+@theme inline {
+  --color-background:            var(--background);
+  --color-foreground:            var(--foreground);
+  --color-card:                  var(--card);
+  --color-card-foreground:       var(--card-foreground);
+  --color-popover:               var(--popover);
+  --color-popover-foreground:    var(--popover-foreground);
+  --color-primary:                var(--primary);
+  --color-primary-foreground:     var(--primary-foreground);
+  --color-secondary:              var(--secondary);
+  --color-secondary-foreground:   var(--secondary-foreground);
+  --color-muted:                  var(--muted-bg);
+  --color-muted-foreground:       var(--muted-foreground);
+  --color-accent:                 var(--accent);
+  --color-accent-foreground:      var(--accent-foreground);
+  --color-destructive:            var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border:                 var(--border-color);
+  --color-input:                  var(--input);
+  --color-ring:                   var(--ring);
+  --color-gold:                   var(--gold);
+  --color-gold-l:                 var(--gold-l);
+  --color-border-h:               var(--border-h);
+  --color-muted-2:                var(--muted-2);
+  --color-panel:                  var(--panel);
+  --color-panel-2:                var(--panel-2);
+
+  --radius-sm:  calc(var(--radius) - 6px);
+  --radius-md:  calc(var(--radius) - 3px);
+  --radius-lg:  var(--radius);
+  --radius-xl:  calc(var(--radius) + 4px);
+
+  --font-serif: 'Playfair Display', serif;
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ── Leaflet photo markers (raw HTML via divIcon, outside React's control) ── */
+.pm-wrap { background: transparent; border: 0; touch-action: manipulation; }
+
+.pm {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2.5px solid var(--gold);
+  box-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 0 1px rgba(200,160,96,.25);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .18s ease, box-shadow .18s ease;
+  background: var(--panel-2);
+  display: flex; align-items: center; justify-content: center;
+}
+.pm:hover { transform: scale(1.15); box-shadow: 0 4px 18px rgba(0,0,0,.8), 0 0 0 2px rgba(200,160,96,.5); }
+.pm.active { border-color: #fff; box-shadow: 0 4px 20px rgba(0,0,0,.8), 0 0 0 3px rgba(255,255,255,.25); transform: scale(1.1); }
+.pm img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pm-flag { width: 26px; height: 18px; border-radius: 2px; object-fit: cover; }
+
+@keyframes pm-pulse {
+  0%   { box-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 0 0   rgba(200,160,96,.6); }
+  70%  { box-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 0 12px rgba(200,160,96,0); }
+  100% { box-shadow: 0 2px 10px rgba(0,0,0,.7), 0 0 0 0   rgba(200,160,96,0); }
+}
+.pm.pulse { animation: pm-pulse 2.4s ease-out infinite; }
+
+.leaflet-tooltip.route-tooltip {
+  background: var(--panel); color: var(--text); border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm); font-size: 11px; padding: 3px 8px; border-radius: 5px;
+}
+
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.leaflet-bottom.leaflet-right { margin-bottom: 4px; margin-right: 4px; }
+
+/* ── Timeline entrance / gallery hover polish kept as plain CSS ── */
+.gallery-media { transition: transform .2s, box-shadow .2s, border-color .2s; }
+.gallery-media:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(0,0,0,.5); }

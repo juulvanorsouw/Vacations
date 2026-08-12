@@ -1,13 +1,12 @@
 // Vakantiedata — bewerk dit bestand om reizen toe te voegen of bij te werken.
-// Laat de regel "window.VACATIONS =" bovenaan en de afsluitende ";" staan.
+// Laat de regel "export const VACATIONS =" bovenaan en de afsluitende ";" staan.
 //
 // "country" is een ISO-landcode (bv "NO" voor Noorwegen).
 // "route" is optioneel — een lijst van tussenstops; tekent een lijn op de kaart.
 //   Vorm: [{ "name": "Plaats", "lat": 0.0, "lon": 0.0 }, ...]
-// Tip: zet de beginplaats ook als laatste stop, dan tekent 'ie een rondreis.
+// Tip: zet de beginplaats ook als laatste stop, dan tekent ie een rondreis.
 
-window.VACATIONS = {
-  "vacations": [
+export const VACATIONS = [
     {
       "id": "alsace-2026",
       "title": "Alsace",
@@ -763,5 +762,4 @@ window.VACATIONS = {
         { "name": "Helsinki", "lat": 60.1699, "lon": 24.9384 }
       ]
     }
-  ]
-};
+  ];
