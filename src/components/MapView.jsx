@@ -227,7 +227,7 @@ function TripSheetPanel({ v, hasPhoto, onClose, onDetails, onSwipeNav }) {
 
   return (
     <motion.div
-      className="absolute bottom-0 left-0 w-full sm:w-[400px] max-h-[80vh] sm:max-h-[80vh] bg-[#100c08]/96 border border-border rounded-t-[18px] shadow-2xl backdrop-blur-md z-[700] flex flex-col overflow-hidden"
+      className="absolute bottom-0 left-0 w-full sm:w-[400px] max-h-[80vh] sm:max-h-[80vh] bg-[#100c08]/96 border border-border rounded-t-[18px] shadow-2xl backdrop-blur-md z-[700] flex flex-col overflow-hidden touch-pan-y"
       initial={{ y: "100%" }}
       animate={{ y: 0 }}
       exit={{ y: "100%" }}
@@ -236,7 +236,10 @@ function TripSheetPanel({ v, hasPhoto, onClose, onDetails, onSwipeNav }) {
       onTouchEnd={(e) => {
         const dx = e.changedTouches[0].clientX - touchStart.current.x;
         const dy = e.changedTouches[0].clientY - touchStart.current.y;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) onSwipeNav(dx < 0 ? 1 : -1);
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          e.preventDefault();
+          onSwipeNav(dx < 0 ? 1 : -1);
+        }
       }}
     >
       <div className="w-9 h-1 bg-border-h rounded-full mx-auto mt-2.5 shrink-0" />

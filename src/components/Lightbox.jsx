@@ -11,12 +11,15 @@ export default function Lightbox({ state, onClose, onNavigate }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/96 flex items-center justify-center z-[2000] p-6"
+      className="fixed inset-0 bg-black/96 flex items-center justify-center z-[2000] p-6 touch-none"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       onTouchStart={(e) => { touchStartX.current = e.changedTouches[0].clientX; }}
       onTouchEnd={(e) => {
         const dx = e.changedTouches[0].clientX - touchStartX.current;
-        if (Math.abs(dx) > 40) onNavigate(dx < 0 ? 1 : -1);
+        if (Math.abs(dx) > 40) {
+          e.preventDefault();
+          onNavigate(dx < 0 ? 1 : -1);
+        }
       }}
     >
       {total > 1 && (
@@ -39,7 +42,7 @@ export default function Lightbox({ state, onClose, onNavigate }) {
           {isVid ? (
             <video src={src} controls autoPlay className="max-w-[90vw] max-h-[90vh] object-contain rounded select-none" />
           ) : (
-            <img src={src} alt={alts[index] || ""} className="max-w-[90vw] max-h-[90vh] object-contain rounded select-none" />
+            <img src={src} alt={alts[index] || ""} draggable={false} className="max-w-[90vw] max-h-[90vh] object-contain rounded select-none" />
           )}
         </motion.div>
       </AnimatePresence>
