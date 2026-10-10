@@ -4,6 +4,8 @@ import * as topojson from "topojson-client";
 import { ISO2_TO_NUM, LAND_NAMEN, CONTINENT_BOUNDS, CONTINENT_COUNTRIES, MAINLAND_BOUNDS } from "@/data/worldMeta";
 import { visitedCountrySet } from "@/lib/helpers";
 
+const WATER = "#e9e3d7", GRID = "#ddd6c8", VISITED = "#e2574b", UNVISITED = "#fbf9f4", BORDER = "#cfc5b5";
+
 function getVisitedNums(vacations) {
   const iso = visitedCountrySet(vacations);
   const set = new Set();
@@ -17,13 +19,16 @@ export default function WorldView({ vacations, active }) {
   const stateRef = useRef({ worldData: null, projection: null, zoom: null, svg: null });
   const [stats, setStats] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!active || loaded) return;
-    fetch("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
-      .then((r) => r.json())
+    // Bundled with the site (public/data) so the view also works offline or
+    // when a CDN is blocked.
+    fetch(import.meta.env.BASE_URL + "data/countries-110m.json")
+      .then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
       .then((data) => { stateRef.current.worldData = data; drawWorldMap(data); setLoaded(true); })
-      .catch((err) => console.warn("Wereldkaart kon niet laden:", err));
+      .catch((err) => { console.warn("Wereldkaart kon niet laden:", err); setError("De wereldkaart kon niet geladen worden."); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
@@ -43,10 +48,8 @@ export default function WorldView({ vacations, active }) {
     svg.call(zoom);
     stateRef.current = { ...stateRef.current, projection, zoom, svg };
 
-    g.append("path").datum({ type: "Sphere" }).attr("d", pathGen).attr("fill", "#07090f");
-    g.append("path").datum(d3.geoGraticule()()).attr("d", pathGen).attr("fill", "none").attr("stroke", "#0f1520").attr("stroke-width", 0.35);
-
-    const VISITED = "#c8a060", UNVISITED = "#1a1c24";
+    g.append("path").datum({ type: "Sphere" }).attr("d", pathGen).attr("fill", WATER).attr("stroke", BORDER).attr("stroke-width", 0.6);
+    g.append("path").datum(d3.geoGraticule()()).attr("d", pathGen).attr("fill", "none").attr("stroke", GRID).attr("stroke-width", 0.35);
 
     function centroid(ring) {
       let lx = 0, ly = 0;
@@ -63,7 +66,7 @@ export default function WorldView({ vacations, active }) {
         .attr("fill", isVis ? VISITED : UNVISITED)
         .attr("stroke", "none")
         .style("transition", "opacity .12s")
-        .on("mouseenter", function () { if (isVis) d3.select(this).style("opacity", 0.75); })
+        .on("mouseenter", function () { if (isVis) d3.select(this).style("opacity", 0.8); })
         .on("mousemove", (e) => {
           if (!name || !tooltipRef.current) return;
           tooltipRef.current.textContent = name + (isVis ? " ✓" : "");
@@ -89,7 +92,7 @@ export default function WorldView({ vacations, active }) {
       if (over.length) addPath({ type: "MultiPolygon", coordinates: over }, id, false);
     });
 
-    g.append("path").datum(borders).attr("d", pathGen).attr("fill", "none").attr("stroke", "#07090f").attr("stroke-width", 0.45);
+    g.append("path").datum(borders).attr("d", pathGen).attr("fill", "none").attr("stroke", BORDER).attr("stroke-width", 0.45);
 
     computeStats(visited);
   }
@@ -126,50 +129,39 @@ export default function WorldView({ vacations, active }) {
   const pct = (v, t) => (t === 0 ? "0%" : Math.round((v / t) * 100) + "%");
 
   return (
-    <div className="flex flex-col overflow-hidden bg-[#07090f] h-full">
-      <div className="flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col overflow-hidden wall-bg h-full">
+      <div className="flex-1 min-h-0 overflow-hidden relative">
         <svg ref={svgRef} className="w-full h-full block cursor-grab active:cursor-grabbing" aria-label="Bezochte landen wereldkaart" />
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center text-sm text-ink-2">{error}</div>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-1.5 justify-center py-2.5 px-5 border-t border-border shrink-0">
+      <div className="flex flex-wrap gap-1.5 justify-center py-2.5 px-5 border-t border-line bg-paper/70 shrink-0">
         {stats && (
           <>
-            <StatChip
-              global
-              onClick={() => zoomToContinent("world")}
-              label="Wereld"
-              visited={stats.visitedAll}
-              total={stats.totalAll}
-              pct={pct(stats.visitedAll, stats.totalAll)}
-            />
+            <StatChip global onClick={() => zoomToContinent("world")} label="Wereld" visited={stats.visitedAll} total={stats.totalAll} pct={pct(stats.visitedAll, stats.totalAll)} />
             {Object.entries(stats.contStats).map(([cont, s]) => (
-              <StatChip
-                key={cont}
-                onClick={() => zoomToContinent(cont)}
-                label={cont}
-                visited={s.visited}
-                total={s.total}
-                pct={pct(s.visited, s.total)}
-              />
+              <StatChip key={cont} onClick={() => zoomToContinent(cont)} label={cont} visited={s.visited} total={s.total} pct={pct(s.visited, s.total)} />
             ))}
           </>
         )}
       </div>
 
-      <div className="flex items-center justify-center gap-6 py-2 px-6 border-t border-border shrink-0">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: "var(--gold)" }} />
+      <div className="flex items-center justify-center gap-6 py-2 px-6 border-t border-line bg-paper/70 shrink-0">
+        <div className="flex items-center gap-1.5 text-xs text-ink-2">
+          <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: VISITED }} />
           <span>{stats ? `${stats.visitedAll} bezocht` : "Bezocht"}</span>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <div className="w-3 h-3 rounded-sm shrink-0" style={{ background: "#1a1c24" }} />
+        <div className="flex items-center gap-1.5 text-xs text-ink-2">
+          <div className="w-3 h-3 rounded-sm shrink-0 border border-line-h" style={{ background: UNVISITED }} />
           <span>Nog niet bezocht</span>
         </div>
       </div>
 
       <div
         ref={tooltipRef}
-        className="fixed bg-card border border-border rounded-md px-2.5 py-1 text-xs text-foreground pointer-events-none opacity-0 transition-opacity shadow-lg z-[9999] whitespace-nowrap"
+        className="fixed bg-paper border border-line rounded-md px-2.5 py-1 text-xs text-ink pointer-events-none opacity-0 transition-opacity shadow-md z-[9999] whitespace-nowrap"
       />
     </div>
   );
@@ -179,13 +171,11 @@ function StatChip({ global, onClick, label, visited, total, pct }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] transition-colors ${
-        global
-          ? "bg-accent border-gold/35 text-gold"
-          : "bg-card border-border text-muted-foreground hover:border-border-h hover:text-foreground"
+      className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] tabular-nums transition-colors ${
+        global ? "bg-ink border-ink text-paper" : "bg-paper border-line text-ink-2 hover:border-line-h hover:text-ink"
       }`}
     >
-      <strong className={global ? "text-gold" : "text-foreground"}>{label}&nbsp;{visited}/{total}</strong>
+      <strong className={global ? "text-paper" : "text-ink"}>{label}&nbsp;{visited}/{total}</strong>
       &nbsp;{pct}
     </button>
   );

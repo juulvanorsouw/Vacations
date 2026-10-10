@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import FlagImg from "@/components/FlagImg";
-import { joinPath, formatDateRange } from "@/lib/helpers";
+import { joinPath, thumbPath, thumbFallback, formatDateRange, tripDays, formatDays, routeStops, isVideo, photoCaption } from "@/lib/helpers";
 
 // The vendored Dialog wraps a Radix Portal directly in AnimatePresence, which
 // can't detect the portal's exit-animation completion — it never actually
@@ -25,26 +25,31 @@ export default function TripModal({ trip, onClose, onOpenLightbox, onViewOnMap }
   if (!mounted) return null;
   const shown = lastTrip.current;
   const pics = shown.pictures || [];
-  const route = shown.route?.length > 1 ? shown.route.map((p) => p.name || "").filter(Boolean).join(" → ") : null;
+  const stops = routeStops(shown);
+  const days = tripDays(shown);
   const srcs = pics.map((p) => joinPath(shown.folder, p));
-  const alts = pics.map((p) => shown.title + " - " + p);
+  const thumbs = pics.map((p) => thumbPath(shown.folder, p));
+  const captions = pics.map((_, i) => photoCaption(shown, i, pics.length));
 
   return (
     <Dialog open={!!trip} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-[860px] w-full max-h-[90vh] overflow-hidden flex flex-col p-0 bg-card border-border gap-0">
+      <DialogContent className="max-w-[880px] w-full max-h-[90vh] overflow-hidden flex flex-col p-0 bg-paper border-line gap-0 rounded-2xl">
         <DialogTitle className="sr-only">{shown.title}</DialogTitle>
 
-        <header className="bg-secondary border-b border-border px-[22px] py-[18px]">
-          <h2 className="font-serif italic text-[22px] text-gold-l">
-            <FlagImg iso={shown.country} className="w-[26px] h-[18px] mr-2" />
-            {shown.title}
-          </h2>
-          <div className="flex items-center justify-between gap-3 mt-1.5">
-            <div className="text-muted-foreground text-xs">
-              {formatDateRange(shown.startDate, shown.endDate)}&nbsp;&nbsp;{shown.location}
+        <header className="px-5 sm:px-7 pt-5 pb-4 border-b border-line">
+          <div className="flex items-center gap-2 text-[10px] text-ink-2 tracking-widest uppercase mb-1">
+            <FlagImg iso={shown.country} className="w-5 h-3.5" />
+            {shown.location || shown.title}
+          </div>
+          <h2 className="font-hand text-[40px] leading-none text-ink m-0 -rotate-1 origin-left">{shown.title}</h2>
+          <div className="flex items-center justify-between gap-3 mt-2 flex-wrap">
+            <div className="text-xs text-ink-2 tabular-nums">
+              {formatDateRange(shown.startDate, shown.endDate)}
+              {days ? ` · ${formatDays(days)}` : ""}
+              {pics.length ? ` · ${pics.length} foto's` : ""}
             </div>
             <button
-              className="border border-border text-muted-foreground rounded-lg px-3 py-1 text-xs font-medium hover:text-foreground hover:bg-card hover:border-border-h transition whitespace-nowrap shrink-0"
+              className="border border-line text-ink rounded-full px-3.5 py-1 text-xs font-medium hover:bg-cream hover:border-line-h transition whitespace-nowrap shrink-0"
               onClick={() => onViewOnMap(shown.id)}
             >
               Kaart bekijken →
@@ -52,32 +57,36 @@ export default function TripModal({ trip, onClose, onOpenLightbox, onViewOnMap }
           </div>
         </header>
 
-        <div className="px-[22px] pt-5 pb-6 overflow-y-auto">
-          <p className="mb-4.5 leading-relaxed text-[#907860] text-[14.5px]">{shown.description}</p>
-          {route && (
-            <div className="mb-4.5 px-3.5 py-2.5 bg-secondary border border-border rounded-lg text-[13px] text-[#907860]">
-              <b className="text-foreground mr-1.5">Route:</b>{route}
+        <div className="px-5 sm:px-7 pt-5 pb-7 overflow-y-auto">
+          <p className="mb-4 leading-relaxed text-ink-2 text-[14.5px] max-w-[65ch]">{shown.description}</p>
+          {stops.length > 0 && (
+            <div className="mb-5 px-3.5 py-2.5 bg-cream border border-line rounded-lg text-[13px] text-ink-2">
+              <b className="text-ink mr-1.5 font-medium">Route:</b>{stops.join(" → ")}
             </div>
           )}
 
-          <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
+          <div className="grid gap-5 sm:gap-6 pt-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
             {!pics.length && (
-              <div className="col-span-full text-muted-foreground text-sm text-center py-8 border border-dashed border-border rounded-lg">
+              <div className="col-span-full text-ink-2 text-sm text-center py-8 border border-dashed border-line-h rounded-lg">
                 Nog geen foto's voor deze reis.
               </div>
             )}
             {srcs.map((src, i) =>
-              src.endsWith(".mp4") ? (
-                <video key={src} src={src} controls className="gallery-media w-full aspect-[4/3] object-cover rounded-lg border border-border bg-secondary block" />
+              isVideo(src) ? (
+                <div key={src} className="bg-paper p-2 pb-7 shadow-[var(--shadow-sm)] relative">
+                  <video src={src} controls className="w-full aspect-square object-cover bg-cream block" />
+                  <span className="absolute left-2.5 bottom-1.5 font-hand text-[17px] text-ink leading-none">video</span>
+                </div>
               ) : (
-                <img
+                <button
                   key={src}
-                  src={src}
-                  alt={alts[i]}
-                  loading="lazy"
-                  className="gallery-media w-full aspect-[4/3] object-cover rounded-lg border border-border bg-secondary block cursor-pointer"
-                  onClick={() => onOpenLightbox(srcs, alts, i)}
-                />
+                  className="gallery-media bg-paper p-2 pb-7 shadow-[var(--shadow-sm)] relative text-left cursor-pointer"
+                  onClick={() => onOpenLightbox(srcs, captions, i)}
+                  aria-label={captions[i]}
+                >
+                  <img src={thumbs[i]} onError={thumbFallback(src)} alt="" loading="lazy" decoding="async" className="w-full aspect-square object-cover bg-cream block" />
+                  <span className="absolute left-2.5 bottom-1.5 font-hand text-[17px] text-ink leading-none tabular-nums">{i + 1} / {pics.length}</span>
+                </button>
               )
             )}
           </div>

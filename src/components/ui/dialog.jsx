@@ -129,13 +129,14 @@ function DialogPortalPrimitive(props) {
   );
 }
 
-function DialogOverlayPrimitive({
+const DialogOverlayPrimitive = React.forwardRef(function DialogOverlayPrimitive({
   transition = { duration: 0.2, ease: 'easeInOut' },
   ...props
-}) {
+}, ref) {
   return (
     <DialogPrime.Overlay data-slot="dialog-overlay" asChild forceMount>
       <motion.div
+        ref={ref}
         key="dialog-overlay"
         initial={{ opacity: 0, filter: 'blur(4px)' }}
         animate={{ opacity: 1, filter: 'blur(0px)' }}
@@ -144,9 +145,9 @@ function DialogOverlayPrimitive({
         {...props} />
     </DialogPrime.Overlay>
   );
-}
+});
 
-function DialogContentPrimitive({
+const DialogContentPrimitive = React.forwardRef(function DialogContentPrimitive({
   from = 'top',
   onOpenAutoFocus,
   onCloseAutoFocus,
@@ -155,7 +156,7 @@ function DialogContentPrimitive({
   onInteractOutside,
   transition = { type: 'spring', stiffness: 150, damping: 25 },
   ...props
-}) {
+}, ref) {
   const initialRotation =
     from === 'bottom' || from === 'left' ? '20deg' : '-20deg';
   const isVertical = from === 'top' || from === 'bottom';
@@ -171,6 +172,7 @@ function DialogContentPrimitive({
       onPointerDownOutside={onPointerDownOutside}
       onInteractOutside={onInteractOutside}>
       <motion.div
+        ref={ref}
         key="dialog-content"
         data-slot="dialog-content"
         initial={{
@@ -192,7 +194,7 @@ function DialogContentPrimitive({
         {...props} />
     </DialogPrime.Content>
   );
-}
+});
 
 function DialogClosePrimitive(props) {
   return <DialogPrime.Close data-slot="dialog-close" {...props} />;

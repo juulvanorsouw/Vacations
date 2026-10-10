@@ -1,22 +1,43 @@
+import { useRef } from "react";
 import { AnimatedBackground } from "@/components/motion-primitives/animated-background";
-import { TextEffect } from "@/components/motion-primitives/text-effect";
 
 const TABS = [
+  { id: "wall", label: "Muur" },
   { id: "map", label: "Kaart" },
-  { id: "timeline", label: "Tijdlijn" },
   { id: "world", label: "Wereld" },
 ];
 
 export default function Header({ view, onViewChange, tripCount, countryCount }) {
-  return (
-    <header className="fixed top-0 left-0 right-0 h-[54px] flex items-center justify-between px-5 bg-background/82 backdrop-blur-xl border-b border-border z-[900]">
-      <span className="font-serif italic text-lg text-gold tracking-wide shrink-0">
-        <TextEffect per="char">Juuls reizen</TextEffect>
-      </span>
+  const listRef = useRef(null);
 
-      <div className="flex gap-0.5 bg-card/70 border border-border rounded-full p-[3px]" role="tablist">
+  // Arrow keys move between tabs, as a tablist should.
+  function onKeyDown(e) {
+    const idx = TABS.findIndex((t) => t.id === view);
+    let next = null;
+    if (e.key === "ArrowRight") next = TABS[(idx + 1) % TABS.length];
+    if (e.key === "ArrowLeft") next = TABS[(idx - 1 + TABS.length) % TABS.length];
+    if (e.key === "Home") next = TABS[0];
+    if (e.key === "End") next = TABS[TABS.length - 1];
+    if (!next) return;
+    e.preventDefault();
+    onViewChange(next.id);
+    listRef.current?.querySelector(`[data-id="${next.id}"]`)?.focus();
+  }
+
+  return (
+    <header className="fixed top-0 left-0 right-0 h-[54px] flex items-center justify-between gap-3 px-4 sm:px-5 bg-wall/85 backdrop-blur-xl border-b border-line z-[900]">
+      <a
+        href="#"
+        onClick={(e) => { e.preventDefault(); onViewChange("wall"); }}
+        className="font-hand text-[23px] sm:text-[26px] leading-none text-ink -rotate-2 shrink-0 no-underline"
+        aria-label="Juuls reizen, naar de muur"
+      >
+        Juuls reizen
+      </a>
+
+      <div ref={listRef} className="flex gap-0.5 bg-paper border border-line rounded-full p-[3px] shadow-sm" role="tablist" aria-label="Weergave" onKeyDown={onKeyDown}>
         <AnimatedBackground
-          className="bg-accent rounded-full"
+          className="bg-ink rounded-full"
           value={view}
           onValueChange={onViewChange}
           transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
@@ -27,8 +48,9 @@ export default function Header({ view, onViewChange, tripCount, countryCount }) 
               data-id={t.id}
               role="tab"
               aria-selected={view === t.id}
-              className={`px-4 py-[5px] rounded-full text-xs font-medium tracking-wide whitespace-nowrap transition-colors ${
-                view === t.id ? "text-gold" : "text-muted-foreground hover:text-foreground"
+              tabIndex={view === t.id ? 0 : -1}
+              className={`isolate px-3.5 sm:px-4 py-[5px] rounded-full text-xs font-medium tracking-wide whitespace-nowrap transition-colors ${
+                view === t.id ? "text-paper" : "text-ink-2 hover:text-ink"
               }`}
             >
               {t.label}
@@ -37,16 +59,16 @@ export default function Header({ view, onViewChange, tripCount, countryCount }) 
         </AnimatedBackground>
       </div>
 
-      <div className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+      <div className="text-xs text-ink-2 shrink-0 tabular-nums hidden sm:block">
         <button
-          className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 hover:text-foreground transition-colors"
-          onClick={() => onViewChange("timeline")}
+          className="hover:text-ink transition-colors underline decoration-dotted decoration-line-h underline-offset-2"
+          onClick={() => onViewChange("wall")}
         >
           {tripCount} reizen
         </button>
-        &nbsp;·&nbsp;
+        <span aria-hidden="true"> · </span>
         <button
-          className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 hover:text-foreground transition-colors"
+          className="hover:text-ink transition-colors underline decoration-dotted decoration-line-h underline-offset-2"
           onClick={() => onViewChange("world")}
         >
           {countryCount} landen
