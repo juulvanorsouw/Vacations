@@ -8,6 +8,40 @@
 
 export const VACATIONS = [
     {
+      "id": "oslo-2026-okt",
+      "title": "Oslo",
+      "location": "Oslo, Noorwegen",
+      "country": "NO",
+      "lat": 59.9139,
+      "lon": 10.7522,
+      "startDate": "2026-10-05",
+      "endDate": "2026-10-09",
+      "description": "Herfst in Oslo: een fjordsauna bij de opera en een zonsondergang over Akershus.",
+      "folder": "pictures/oslo-2026-okt",
+      "pictures": [
+        "zonsondergang-akershus.jpeg",
+        "fjordsauna-opera.jpeg",
+        "video-1.mp4",
+        "video-2.mp4"
+      ]
+    },
+    {
+      "id": "ochtrup-2026",
+      "title": "Ochtrup",
+      "location": "Ochtrup, Duitsland",
+      "country": "DE",
+      "lat": 52.19389,
+      "lon": 7.29615,
+      "startDate": "2026-09-25",
+      "endDate": "2026-09-27",
+      "description": "Weekend met de jongens in Ochtrup: voetballen in een oude kerk en het Designer Outlet.",
+      "folder": "pictures/ochtrup-2026",
+      "pictures": [
+        "teamfoto-voetbalkerk.jpeg",
+        "hart-designer-outlet.jpeg"
+      ]
+    },
+    {
       "id": "alsace-2026",
       "title": "Alsace",
       "location": "Alsace, Frankrijk",
@@ -18,7 +52,10 @@ export const VACATIONS = [
       "endDate": "2026-08-14",
       "description": "Opnieuw een week door de Alsace.",
       "folder": "pictures/alsace-2026",
-      "pictures": ["WhatsApp Image 2026-08-10 at 15.22.52.jpeg"]
+      "pictures": [
+        "petite-france-straatsburg.jpeg",
+        "WhatsApp Image 2026-08-10 at 15.22.52.jpeg"
+      ]
     },
     {
       "id": "roemenia-2026",
@@ -534,8 +571,13 @@ export const VACATIONS = [
       "description": "Een rondreis door Montenegro en de Balkan met bergwandelingen, de baai van Kotor en turkooizen rivieren.",
       "folder": "pictures/tivat-2025",
       "pictures": [
-        "berggeit.jpeg", "uitkijk-graffiti.jpeg", "billboard-kotor.jpeg",
-        "stenen-brug.jpeg", "turkoois-rivier.jpeg", "berglandschap.jpeg", "waterval.jpeg"
+        "billboard-kotor.jpeg",
+        "berggeit.jpeg",
+        "uitkijk-graffiti.jpeg",
+        "stenen-brug.jpeg",
+        "turkoois-rivier.jpeg",
+        "berglandschap.jpeg",
+        "waterval.jpeg"
       ],
       "route": [
         { "name": "Dubrovnik", "lat": 42.65052, "lon": 18.09439 },
@@ -671,7 +713,12 @@ export const VACATIONS = [
       "endDate": "2025-03-09",
       "description": "Een week in Boedapest met daguitstapjes naar Esztergom en het Slowaakse Štúrovo aan de overkant van de Donau.",
       "folder": "pictures/budapest-2025",
-      "pictures": ["kabelbaan-burcht.jpeg", "vajdahunyad-kasteel.jpeg", "buda-kasteel-nacht.jpeg", "parlement-donau.jpeg"],
+      "pictures": [
+        "buda-kasteel-nacht.jpeg",
+        "kabelbaan-burcht.jpeg",
+        "vajdahunyad-kasteel.jpeg",
+        "parlement-donau.jpeg"
+      ],
       "route": [
         { "name": "Boedapest", "lat": 47.49788, "lon": 19.03993 },
         { "name": "", "lat": 47.53023, "lon": 19.03785 },
@@ -741,7 +788,13 @@ export const VACATIONS = [
       "endDate": "2024-06-28",
       "description": "Saturnveien 8 en Tverrbakken 4, 0475 Oslo.",
       "folder": "pictures/oslo-2024",
-      "pictures": ["foto-1.jpeg", "foto-2.jpeg", "foto-3.jpeg", "foto-4.jpeg", "video-1.mp4"]
+      "pictures": [
+        "foto-2.jpeg",
+        "foto-1.jpeg",
+        "foto-3.jpeg",
+        "foto-4.jpeg",
+        "video-1.mp4"
+      ]
     },
     {
       "id": "tallinn-2023",

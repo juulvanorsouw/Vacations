@@ -108,18 +108,19 @@ body {
   background: var(--paper);
   padding: 9px 9px 40px;
   box-shadow: var(--shadow);
-  transform: rotate(var(--tilt, 0deg));
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--tilt, 0deg)) scale(var(--s, 1));
   transition: transform .25s cubic-bezier(.2, .8, .2, 1), box-shadow .25s;
   will-change: transform;
 }
-.print:hover, .print:focus-visible { transform: rotate(0deg) translateY(-4px) scale(1.02); box-shadow: 0 26px 48px -18px rgba(40, 30, 20, .55); z-index: 2; }
+.print:hover, .print:focus-visible { transform: translate(var(--dx, 0px), calc(var(--dy, 0px) - 4px)) rotate(0deg) scale(1.03); box-shadow: 0 26px 48px -18px rgba(40, 30, 20, .55); z-index: 2; }
 .print::before {
   /* push-pin */
   content: ""; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; margin-left: -7px;
   border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ff8a7c, var(--pin) 60%, #a33528);
   box-shadow: 0 2px 4px rgba(0, 0, 0, .35); z-index: 1;
 }
-@media (max-width: 640px) { .print { --tilt: 0deg !important; } }
+@media (min-width: 640px) { .print-big { padding-bottom: 64px; } }
+@media (max-width: 640px) { .print { --tilt: 0deg !important; --dx: 0px !important; --s: 1 !important; } }
 @media (prefers-reduced-motion: reduce) { .print { transition: none; } }
 
 @keyframes print-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

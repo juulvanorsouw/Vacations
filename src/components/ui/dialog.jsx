@@ -17,12 +17,14 @@ function DialogClose(props) {
   return <DialogClosePrimitive {...props} />;
 }
 
-function DialogOverlay({
+// Radix wraps each Portal child in Presence, which clones it with a ref, so
+// these wrappers must forward refs or React warns on every open.
+const DialogOverlay = React.forwardRef(function DialogOverlay({
   className,
   ...props
-}) {
-  return (<DialogOverlayPrimitive className={cn('fixed inset-0 z-50 bg-black/50', className)} {...props} />);
-}
+}, ref) {
+  return (<DialogOverlayPrimitive ref={ref} className={cn('fixed inset-0 z-50 bg-black/50', className)} {...props} />);
+});
 
 function DialogContent({
   className,

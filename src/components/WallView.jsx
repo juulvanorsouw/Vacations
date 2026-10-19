@@ -4,8 +4,30 @@ import * as topojson from "topojson-client";
 import FlagImg from "@/components/FlagImg";
 import { joinPath, thumbPath, thumbFallback, formatMonthYear, tripDays, formatDays, isVideo, routeStops } from "@/lib/helpers";
 
-// Deterministic tilts so the wall looks hand-pinned but never shuffles between renders.
-const TILTS = [-3, 2, -1.5, 2.5, -2, 1, 3, -2.5, 1.5, -1];
+// Pseudo-random but deterministic per trip id, so the wall looks hand-pinned
+// (uneven tilt, nudge and size) yet never shuffles between renders.
+function hash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+function scatter(id, big) {
+  const h = hash(id);
+  const r = (shift) => (((h >>> shift) & 255) / 255) * 2 - 1; // -1..1
+  const k = big ? 0.5 : 1; // big prints move less so they never crowd their neighbours
+  return {
+    tilt: +(r(0) * (big ? 3 : 6)).toFixed(2), // small -6..6 deg, big -3..3
+    dx: Math.round(r(8) * 16 * k),
+    dy: Math.round(r(16) * 22 * k),
+    scale: +(1 + r(24) * 0.04 * k).toFixed(3),
+  };
+}
+
+const BIG_CLASS = {
+  center: "sm:col-span-2 sm:row-span-2 sm:col-start-2",
+  right: "sm:col-span-2 sm:row-span-2 sm:col-start-2 md:col-start-3",
+  left: "sm:col-span-2 sm:row-span-2 sm:col-start-1",
+};
 
 export default function WallView({ vacations, countryCount, active, onOpenModal, onGoToMap }) {
   const [yearFilter, setYearFilter] = useState(null);
@@ -18,15 +40,38 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
 
   const filtered = yearFilter ? vacations.filter((v) => (v.startDate || "").startsWith(yearFilter)) : vacations;
 
-  // Flatten into [yearDivider, print, print, yearDivider, ...] so the grid can
-  // place dividers as full-width rows.
+  // Build the wall: year dividers, then the year's trips in groups of five.
+  // In every full group the trip with the most photos becomes a big 2×2 print,
+  // placed first so the grid anchors it; its position cycles centre → right →
+  // left so the wall has a rhythm instead of random big and small prints.
   const items = useMemo(() => {
     const out = [];
-    let lastYear = null;
-    filtered.forEach((v, i) => {
+    const byYear = {};
+    const order = [];
+    filtered.forEach((v) => {
       const y = (v.startDate || "?").slice(0, 4);
-      if (y !== lastYear) { out.push({ type: "year", year: y }); lastYear = y; }
-      out.push({ type: "trip", v, tilt: TILTS[i % TILTS.length] });
+      if (!byYear[y]) { byYear[y] = []; order.push(y); }
+      byYear[y].push(v);
+    });
+    let groupNo = 0;
+    const POS = ["center", "right", "left"];
+    order.forEach((y) => {
+      out.push({ type: "year", year: y });
+      const trips = byYear[y];
+      for (let i = 0; i < trips.length; i += 5) {
+        const group = trips.slice(i, i + 5);
+        let bigIdx = -1;
+        if (group.length === 5) {
+          let best = 0;
+          group.forEach((v, k) => { const n = (v.pictures || []).filter((f) => !isVideo(f)).length; if (n > best) { best = n; bigIdx = k; } });
+        }
+        if (bigIdx >= 0) {
+          const big = group.splice(bigIdx, 1)[0];
+          out.push({ type: "trip", v: big, big: POS[groupNo % POS.length], scatter: scatter(big.id, true) });
+          groupNo++;
+        }
+        group.forEach((v) => out.push({ type: "trip", v, big: null, scatter: scatter(v.id, false) }));
+      }
     });
     return out;
   }, [filtered]);
@@ -54,7 +99,7 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-5 sm:gap-x-7 gap-y-9 sm:gap-y-12 pt-3 items-start">
+        <div className="grid grid-flow-dense grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-5 sm:gap-x-8 gap-y-10 sm:gap-y-14 pt-4 items-start">
           {items.map((it, i) =>
             it.type === "year" ? (
               <div key={"y" + it.year} className="col-span-full flex items-center gap-4 -mb-2">
@@ -62,8 +107,8 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
                 <span className="h-px flex-1 bg-line" aria-hidden="true" />
               </div>
             ) : (
-              <div key={it.v.id} className={`print-in ${(it.v.pictures?.length || 0) >= 4 ? "sm:col-span-2" : ""}`} style={{ animationDelay: `${(i % 8) * 40}ms` }}>
-                <Print v={it.v} tilt={it.tilt} big={(it.v.pictures?.length || 0) >= 4} onOpen={() => onOpenModal(it.v.id)} />
+              <div key={it.v.id} className={`print-in ${it.big ? BIG_CLASS[it.big] : ""}`} style={{ animationDelay: `${(i % 8) * 40}ms` }}>
+                <Print v={it.v} scatter={it.scatter} big={!!it.big} onOpen={() => onOpenModal(it.v.id)} />
               </div>
             )
           )}
@@ -94,7 +139,7 @@ function FilterChip({ active, onClick, children }) {
   );
 }
 
-function Print({ v, tilt, big, onOpen }) {
+function Print({ v, scatter, big, onOpen }) {
   const pics = v.pictures || [];
   const firstImg = pics.find((p) => !isVideo(p));
   const firstVid = !firstImg && pics.find(isVideo);
@@ -110,11 +155,11 @@ function Print({ v, tilt, big, onOpen }) {
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-      className="print relative cursor-pointer"
-      style={{ "--tilt": `${tilt}deg`, paddingBottom: big ? 58 : undefined }}
+      className={`print relative cursor-pointer ${big ? "print-big" : ""}`}
+      style={{ "--tilt": `${scatter.tilt}deg`, "--dx": `${scatter.dx}px`, "--dy": `${scatter.dy}px`, "--s": scatter.scale }}
       aria-label={`${v.title}, ${when}${days ? ", " + formatDays(days) : ""}, ${pics.length ? pics.length + " foto's" : "nog geen foto's"}`}
     >
-      <div className={`${big ? "aspect-[16/10]" : "aspect-square"} bg-cream overflow-hidden`}>
+      <div className="aspect-square bg-cream overflow-hidden">
         {firstImg ? (
           <img src={src} onError={thumbFallback(original)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover block" />
         ) : firstVid ? (
@@ -128,17 +173,12 @@ function Print({ v, tilt, big, onOpen }) {
       </div>
 
       <div className="absolute left-2.5 right-2.5 bottom-2 flex items-baseline justify-between gap-2">
-        <span className={`font-hand text-ink leading-none truncate ${big ? "text-[26px]" : "text-[21px]"}`}>{v.title}</span>
+        <span className={`font-hand text-ink leading-none truncate ${big ? "text-[21px] sm:text-[30px]" : "text-[21px]"}`}>{v.title}</span>
         <span className="text-[10px] sm:text-[11px] text-ink-2 whitespace-nowrap tabular-nums">
           {when}{pics.length ? ` · ${pics.length}` : ""}
         </span>
       </div>
 
-      {big && (
-        <div className="absolute left-2.5 right-2.5 bottom-[30px] sm:bottom-[32px] text-[11px] text-ink-2 truncate">
-          {days ? formatDays(days) : ""}{stops.length ? ` · ${stops.join(" → ")}` : v.location ? ` · ${v.location}` : ""}
-        </div>
-      )}
     </div>
   );
 }
