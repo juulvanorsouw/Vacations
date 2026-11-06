@@ -53,7 +53,10 @@ export const VACATIONS = [
       "description": "Opnieuw een week door de Alsace.",
       "folder": "pictures/alsace-2026",
       "pictures": [
+        "groepsfoto-maskers.jpeg",
         "petite-france-straatsburg.jpeg",
+        "klokkentoren.jpeg",
+        "albert-schweitzer-beeld.jpeg",
         "WhatsApp Image 2026-08-10 at 15.22.52.jpeg"
       ]
     },
@@ -763,6 +766,22 @@ export const VACATIONS = [
       "description": "Een lang weekend in het Eifelgebied bij het historische stadje Nideggen.",
       "folder": "pictures/nideggen-2024",
       "pictures": ["foto-1.jpeg", "foto-2.jpeg", "foto-3.jpeg", "video-1.mp4"]
+    },
+    {
+      "id": "alanya-2024",
+      "title": "Alanya",
+      "location": "Alanya, Turkije",
+      "country": "TR",
+      "lat": 36.5444,
+      "lon": 31.9954,
+      "startDate": "2024-10-20",
+      "endDate": "2024-10-28",
+      "description": "Een week in Alanya aan de Turkse Rivièra, met uitzicht vanaf de burcht over de haven en de Rode Toren.",
+      "folder": "pictures/alanya-2024",
+      "pictures": [
+        "haven-rode-toren.jpeg",
+        "video-1.mp4"
+      ]
     },
     {
       "id": "kos-2024",
