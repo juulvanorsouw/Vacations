@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import * as d3 from "d3";
-import * as topojson from "topojson-client";
+import { useMemo, useState } from "react";
 import FlagImg from "@/components/FlagImg";
 import { joinPath, thumbPath, thumbFallback, formatMonthYear, tripDays, formatDays, isVideo, routeStops } from "@/lib/helpers";
 
@@ -23,13 +21,15 @@ function scatter(id, big) {
   };
 }
 
+// Big print as the 1st of its group sits at the left; as the 2nd it sits in
+// columns 2–3 next to the 1st. Both keep strict date order (reading left to
+// right, top to bottom) at 2, 3 and 4 columns.
 const BIG_CLASS = {
-  center: "sm:col-span-2 sm:row-span-2 sm:col-start-2",
-  right: "sm:col-span-2 sm:row-span-2 sm:col-start-2 md:col-start-3",
   left: "sm:col-span-2 sm:row-span-2 sm:col-start-1",
+  center: "sm:col-span-2 sm:row-span-2 sm:col-start-2",
 };
 
-export default function WallView({ vacations, countryCount, active, onOpenModal, onGoToMap }) {
+export default function WallView({ vacations, countryCount, onOpenModal }) {
   const [yearFilter, setYearFilter] = useState(null);
 
   const years = useMemo(() => {
@@ -40,11 +40,12 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
 
   const filtered = yearFilter ? vacations.filter((v) => (v.startDate || "").startsWith(yearFilter)) : vacations;
 
-  // Build the wall: year dividers, then the year's trips in groups of five.
-  // In every full group the trip with the most photos becomes a big 2×2 print,
-  // placed first so the grid anchors it; its position cycles centre → right →
-  // left so the wall has a rhythm instead of random big and small prints.
-  const items = useMemo(() => {
+  // Build the wall: one section per year, trips strictly newest first. Trips
+  // go in groups of five; in every full group the 1st or 2nd trip (whichever
+  // has more photos) becomes a big 2×2 print, which keeps the date order
+  // intact. Each year gets its own grid so a print can never end up under
+  // the previous year's header.
+  const sections = useMemo(() => {
     const out = [];
     const byYear = {};
     const order = [];
@@ -53,24 +54,21 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
       if (!byYear[y]) { byYear[y] = []; order.push(y); }
       byYear[y].push(v);
     });
-    let groupNo = 0;
-    const POS = ["center", "right", "left"];
     order.forEach((y) => {
-      out.push({ type: "year", year: y });
+      const items = [];
+      out.push({ year: y, items });
       const trips = byYear[y];
       for (let i = 0; i < trips.length; i += 5) {
         const group = trips.slice(i, i + 5);
         let bigIdx = -1;
         if (group.length === 5) {
-          let best = 0;
-          group.forEach((v, k) => { const n = (v.pictures || []).filter((f) => !isVideo(f)).length; if (n > best) { best = n; bigIdx = k; } });
+          const photos = (v) => (v.pictures || []).filter((f) => !isVideo(f)).length;
+          bigIdx = photos(group[1]) > photos(group[0]) ? 1 : 0;
         }
-        if (bigIdx >= 0) {
-          const big = group.splice(bigIdx, 1)[0];
-          out.push({ type: "trip", v: big, big: POS[groupNo % POS.length], scatter: scatter(big.id, true) });
-          groupNo++;
-        }
-        group.forEach((v) => out.push({ type: "trip", v, big: null, scatter: scatter(v.id, false) }));
+        group.forEach((v, k) => {
+          const big = k === bigIdx;
+          items.push({ v, big: big ? (k === 0 ? "left" : "center") : null, scatter: scatter(v.id, big) });
+        });
       }
     });
     return out;
@@ -80,7 +78,7 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
 
   return (
     <div className="wall-bg min-h-full">
-      <div className="max-w-[1120px] mx-auto px-5 sm:px-8 pt-7 pb-28 sm:pb-32">
+      <div className="max-w-[1120px] mx-auto px-5 sm:px-8 pt-7 pb-16 sm:pb-20">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 mb-6">
           <div>
             <h1 className="font-hand text-[40px] sm:text-[48px] leading-none text-ink -rotate-1 origin-left m-0">
@@ -99,28 +97,30 @@ export default function WallView({ vacations, countryCount, active, onOpenModal,
           </div>
         </div>
 
-        <div className="grid grid-flow-dense grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-5 sm:gap-x-8 gap-y-10 sm:gap-y-14 pt-4 items-start">
-          {items.map((it, i) =>
-            it.type === "year" ? (
-              <div key={"y" + it.year} className="col-span-full flex items-center gap-4 -mb-2">
-                <span className="tape font-hand text-[22px] leading-none text-ink">{it.year}</span>
+        <div className="flex flex-col gap-y-10 sm:gap-y-14 pt-4">
+          {sections.map((s) => (
+            <section key={s.year} className="flex flex-col gap-y-8 sm:gap-y-12">
+              <div className="flex items-center gap-4">
+                <span className="tape font-hand text-[22px] leading-none text-ink">{s.year}</span>
                 <span className="h-px flex-1 bg-line" aria-hidden="true" />
               </div>
-            ) : (
-              <div key={it.v.id} className={`print-in ${it.big ? BIG_CLASS[it.big] : ""}`} style={{ animationDelay: `${(i % 8) * 40}ms` }}>
-                <Print v={it.v} scatter={it.scatter} big={!!it.big} onOpen={() => onOpenModal(it.v.id)} />
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-5 sm:gap-x-8 gap-y-10 sm:gap-y-14 items-start">
+                {s.items.map((it, i) => (
+                  <div key={it.v.id} className={`print-in ${it.big ? BIG_CLASS[it.big] : ""}`} style={{ animationDelay: `${(i % 8) * 40}ms` }}>
+                    <Print v={it.v} scatter={it.scatter} big={!!it.big} onOpen={() => onOpenModal(it.v.id)} />
+                  </div>
+                ))}
               </div>
-            )
-          )}
+            </section>
+          ))}
           {!filtered.length && (
-            <div className="col-span-full bg-paper border border-dashed border-line-h rounded-xl p-8 text-center text-ink-2">
+            <div className="bg-paper border border-dashed border-line-h rounded-xl p-8 text-center text-ink-2">
               Geen reizen gevonden.
             </div>
           )}
         </div>
       </div>
 
-      {active && <MiniMap vacations={vacations} onClick={onGoToMap} />}
     </div>
   );
 }
@@ -180,49 +180,5 @@ function Print({ v, scatter, big, onOpen }) {
       </div>
 
     </div>
-  );
-}
-
-/** Small hand-drawn style map pinned in the corner of the wall; tap to open the real map. */
-function MiniMap({ vacations, onClick }) {
-  const svgRef = useRef(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(import.meta.env.BASE_URL + "data/countries-110m.json")
-      .then((r) => r.json())
-      .then((world) => {
-        if (cancelled || !svgRef.current) return;
-        const W = 260, H = 160;
-        const pts = vacations.filter((v) => typeof v.lat === "number" && typeof v.lon === "number");
-        const land = topojson.feature(world, world.objects.countries);
-        const lons = pts.map((p) => p.lon), lats = pts.map((p) => p.lat);
-        const extent = pts.length
-          ? { type: "Polygon", coordinates: [[[Math.min(...lons) - 4, Math.min(...lats) - 3], [Math.max(...lons) + 4, Math.min(...lats) - 3], [Math.max(...lons) + 4, Math.max(...lats) + 3], [Math.min(...lons) - 4, Math.max(...lats) + 3], [Math.min(...lons) - 4, Math.min(...lats) - 3]]] }
-          : land;
-        const projection = d3.geoMercator().fitSize([W, H], extent);
-        const path = d3.geoPath(projection);
-        const svg = d3.select(svgRef.current).attr("viewBox", `0 0 ${W} ${H}`);
-        svg.selectAll("*").remove();
-        svg.append("rect").attr("width", W).attr("height", H).attr("fill", "#dfe8ea");
-        svg.append("path").datum(land).attr("d", path).attr("fill", "#f6f1e6").attr("stroke", "#cfc5b5").attr("stroke-width", 0.6);
-        svg.append("g").selectAll("circle").data(pts).join("circle")
-          .attr("cx", (d) => projection([d.lon, d.lat])[0]).attr("cy", (d) => projection([d.lon, d.lat])[1])
-          .attr("r", 3.2).attr("fill", "#e2574b").attr("stroke", "#fff").attr("stroke-width", 1.2);
-      })
-      .catch((err) => console.warn("Mini-kaart kon niet laden:", err));
-    return () => { cancelled = true; };
-  }, [vacations]);
-
-  return (
-    <button
-      onClick={() => onClick()}
-      aria-label="Open de kaart"
-      className="fixed right-4 bottom-4 sm:right-6 sm:bottom-6 z-[800] w-[180px] h-[124px] sm:w-[260px] sm:h-[176px] bg-paper p-1.5 pb-6 shadow-[var(--shadow)] rotate-2 hover:rotate-0 transition-transform cursor-pointer text-left"
-    >
-      <svg ref={svgRef} className="w-full h-full block bg-cream" preserveAspectRatio="xMidYMid slice" aria-hidden="true" />
-      <span className="absolute left-2.5 bottom-1 font-hand text-[18px] leading-none text-ink">Kaart ↗</span>
-      <span className="absolute -top-1.5 left-1/2 -ml-[7px] w-[14px] h-[14px] rounded-full shadow" style={{ background: "radial-gradient(circle at 35% 35%, #ff8a7c, var(--pin) 60%, #a33528)" }} aria-hidden="true" />
-    </button>
   );
 }

@@ -91,7 +91,7 @@ export default function App() {
 
       <main className="fixed inset-x-0 top-[54px] bottom-0 overflow-hidden">
         <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-200 ${view === "wall" ? "opacity-100 visible" : "opacity-0 invisible"}`}>
-          <WallView vacations={vacations} countryCount={countryCount} active={view === "wall"} onOpenModal={setModalTripId} onGoToMap={() => setView("map")} />
+          <WallView vacations={vacations} countryCount={countryCount} onOpenModal={setModalTripId} />
         </div>
         <div className={`absolute inset-0 transition-opacity duration-200 ${view === "map" ? "opacity-100 visible" : "opacity-0 invisible"}`}>
           <MapView ref={mapRef} vacations={vacations} onOpenModal={setModalTripId} onOpenLightbox={openLightbox} />
