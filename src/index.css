@@ -15,6 +15,14 @@
   --tape:      rgba(236, 200, 120, .6);
   --shadow:    0 18px 40px -18px rgba(40, 30, 20, .45);
   --shadow-sm: 0 6px 16px -8px rgba(40, 30, 20, .35);
+  --dot:       rgba(43, 39, 36, .045);
+  --map-bg:        #e9e3d7;
+  --world-water:   #e9e3d7;
+  --world-grid:    #ddd6c8;
+  --world-land:    #fbf9f4;
+  --world-border:  #cfc5b5;
+  --tile-filter:   saturate(.45) sepia(.14) brightness(1.04) contrast(.95);
+  --attribution-bg: rgba(255, 255, 255, .7);
 
   /* shadcn semantic tokens */
   --background:             var(--wall);
@@ -38,6 +46,46 @@
   --ring:                   var(--pin);
   --radius:                 0.75rem;
   color-scheme: light;
+}
+
+/* ── Dark: a cork board at night. Prints, tape and map markers keep their own
+   light paper (see .print / .tape / .pm), everything else follows the tokens. ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --wall:      #2a2622;
+    --paper:     #35302b;
+    --cream:     #3e3832;
+    --ink:       #f3eee6;
+    --ink-2:     #c9c0b4;
+    --pencil:    #9b9186;
+    --line:      #48413a;
+    --line-h:    #5f574d;
+    --pin:       #ef6a5d;
+    --pin-soft:  #4a2b27;
+    --shadow:    0 18px 40px -16px rgba(0, 0, 0, .7);
+    --shadow-sm: 0 6px 16px -8px rgba(0, 0, 0, .6);
+    --dot:       rgba(255, 240, 220, .05);
+    --tape:      rgba(226, 196, 128, .92);
+    --map-bg:        #2f2b27;
+    --world-water:   #24211d;
+    --world-grid:    #322d28;
+    --world-land:    #3e3832;
+    --world-border:  #554d44;
+    --tile-filter:   saturate(.4) sepia(.12) brightness(.78) contrast(1.02);
+    --attribution-bg: rgba(42, 38, 34, .75);
+    color-scheme: dark;
+  }
+}
+
+/* Light paper that stays light in both themes. */
+.print, .tape, .pm {
+  --paper: #ffffff;
+  --cream: #f1ebe0;
+  --ink:   #2b2724;
+  --ink-2: #5f5850;
+  --pencil:#8d857c;
+  --line:  #e6dfd3;
+  --line-h:#cfc5b5;
 }
 
 @theme inline {
@@ -67,6 +115,7 @@
   --color-pin-soft:               var(--pin-soft);
   --color-cream:                  var(--cream);
   --color-paper:                  var(--paper);
+  --color-wall:                   var(--wall);
   --color-line:                   var(--line);
   --color-line-h:                 var(--line-h);
 
@@ -97,8 +146,8 @@ body {
 .wall-bg {
   background-color: var(--wall);
   background-image:
-    radial-gradient(rgba(43, 39, 36, .045) 1px, transparent 1px),
-    radial-gradient(rgba(43, 39, 36, .03) 1px, transparent 1px);
+    radial-gradient(var(--dot) 1px, transparent 1px),
+    radial-gradient(var(--dot) 1px, transparent 1px);
   background-size: 22px 22px, 34px 34px;
   background-position: 0 0, 11px 17px;
 }
@@ -106,21 +155,31 @@ body {
 /* ── Polaroid print ── */
 .print {
   background: var(--paper);
-  padding: 9px 9px 40px;
+  padding: 9px 9px 54px;
   box-shadow: var(--shadow);
   transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--tilt, 0deg)) scale(var(--s, 1));
   transition: transform .25s cubic-bezier(.2, .8, .2, 1), box-shadow .25s;
   will-change: transform;
 }
-.print:hover, .print:focus-visible { transform: translate(var(--dx, 0px), calc(var(--dy, 0px) - 4px)) rotate(0deg) scale(1.03); box-shadow: 0 26px 48px -18px rgba(40, 30, 20, .55); z-index: 2; }
+@media (hover: hover) {
+  .print:hover { transform: translate(var(--dx, 0px), calc(var(--dy, 0px) - 4px)) rotate(0deg) scale(1.03); box-shadow: 0 26px 48px -18px rgba(40, 30, 20, .55); z-index: 2; }
+}
+.print:focus-visible { transform: translate(var(--dx, 0px), calc(var(--dy, 0px) - 4px)) rotate(0deg) scale(1.03); box-shadow: 0 26px 48px -18px rgba(40, 30, 20, .55); z-index: 2; }
+/* Touch feedback: the print presses into the wall. */
+.print { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.print:active { transform: translate(var(--dx, 0px), var(--dy, 0px)) rotate(var(--tilt, 0deg)) scale(.96); box-shadow: var(--shadow-sm); transition-duration: .08s; }
 .print::before {
   /* push-pin */
   content: ""; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; margin-left: -7px;
   border-radius: 50%; background: radial-gradient(circle at 35% 35%, #ff8a7c, var(--pin) 60%, #a33528);
   box-shadow: 0 2px 4px rgba(0, 0, 0, .35); z-index: 1;
 }
-@media (min-width: 640px) { .print-big { padding-bottom: 64px; } }
-@media (max-width: 640px) { .print { --tilt: 0deg !important; --dx: 0px !important; --s: 1 !important; } }
+/* Phones: keep a light hand-pinned tilt (about a third) but no nudge or size jitter,
+   so the two columns stay aligned. */
+@media (max-width: 640px) {
+  .print { --dx: 0px !important; --dy: 0px !important; --s: 1 !important; transform: rotate(calc(var(--tilt, 0deg) * .35)); }
+  .print:active { transform: rotate(calc(var(--tilt, 0deg) * .35)) scale(.96); }
+}
 @media (prefers-reduced-motion: reduce) { .print { transition: none; } }
 
 @keyframes print-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -167,6 +226,13 @@ body {
   100% { box-shadow: 0 3px 8px rgba(40, 30, 20, .35), 0 0 0 0   rgba(226, 87, 75, 0); }
 }
 .pm.pulse { animation: pm-pulse 2.4s ease-out infinite; }
+/* Several places merged at this zoom: two more prints peek out behind. */
+.pm.pm-stack {
+  box-shadow:
+    4px -3px 0 -1px var(--paper), 4px -3px 0 0 rgba(40, 30, 20, .14),
+    8px -6px 0 -1px var(--paper), 8px -6px 0 0 rgba(40, 30, 20, .14),
+    0 3px 8px rgba(40, 30, 20, .35);
+}
 @media (prefers-reduced-motion: reduce) { .pm.pulse { animation: none; } }
 
 .leaflet-tooltip.route-tooltip {
@@ -175,12 +241,22 @@ body {
 }
 .leaflet-tooltip.route-tooltip::before { border-top-color: var(--paper); }
 
+/* Numbered route stops (trip page map + list) */
+.route-num-wrap { background: transparent; border: 0; }
+.route-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 999px;
+  background: var(--pin); color: #fff; border: 2px solid #fff;
+  font: 700 10px/1 var(--font-sans); box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+}
+.route-num-sm { width: 17px; height: 17px; font-size: 9px; border-width: 0; box-shadow: none; flex-shrink: 0; }
+
 /* OSM tiles toned down to sit on the paper wall */
-.leaflet-tile-pane .tile-paper { filter: saturate(.45) sepia(.14) brightness(1.04) contrast(.95); }
-.leaflet-container { font-family: var(--font-sans); background: #e9e3d7; }
+.leaflet-tile-pane .tile-paper { filter: var(--tile-filter); }
+.leaflet-container { font-family: var(--font-sans); background: var(--map-bg); }
 .leaflet-bar a, .leaflet-control-layers { background: var(--paper); color: var(--ink); border-color: var(--line) !important; }
 .leaflet-bar a:hover { background: var(--cream); }
-.leaflet-control-attribution { background: rgba(255, 255, 255, .7) !important; color: var(--ink-2) !important; font-size: 10px; }
+.leaflet-control-attribution { background: var(--attribution-bg) !important; color: var(--ink-2) !important; font-size: 10px; }
 .leaflet-control-attribution a { color: var(--ink) !important; }
 .leaflet-bottom.leaflet-right { margin-bottom: 4px; margin-right: 4px; }
 

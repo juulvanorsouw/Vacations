@@ -1,5 +1,6 @@
 import { flagSrc } from "@/lib/helpers";
 import { cn } from "@/lib/utils";
+import { countryName } from "@/lib/i18n";
 
 export default function FlagImg({ iso, className }) {
   const src = flagSrc(iso);
@@ -8,7 +9,7 @@ export default function FlagImg({ iso, className }) {
     <img
       className={cn("inline-block align-middle object-cover rounded-[2px] shadow-[0_1px_4px_rgba(0,0,0,.4)]", className)}
       src={src}
-      alt={iso}
+      alt={countryName(iso)}
     />
   );
 }

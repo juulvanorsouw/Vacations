@@ -178,7 +178,7 @@ export const VACATIONS = [
       "pictures": []
     },
     {
-      "id": "barcalona-2026",
+      "id": "barcelona-2026",
       "title": "Barcelona",
       "location": "Barcelona, Spanje",
       "country": "ES",
@@ -187,7 +187,7 @@ export const VACATIONS = [
       "startDate": "2026-06-11",
       "endDate": "2026-06-16",
       "description": "Een week Barcelona met de Arc de Triomf en het Circuit de Catalunya.",
-      "folder": "pictures/barcalona-2026",
+      "folder": "pictures/barcelona-2026",
       "pictures": [
         "WhatsApp Image 2026-06-28 at 16.53.33.jpeg",
         "WhatsApp Video 2026-06-28 at 16.54.03.mp4",

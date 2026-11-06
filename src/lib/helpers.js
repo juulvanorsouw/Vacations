@@ -1,3 +1,6 @@
+import PHOTO_COLORS from "@/data/photoColors.json";
+import { locale, t, tripText } from "@/lib/i18n";
+
 export function joinPath(folder, file) {
   // Build an absolute path from the site root (using Vite's configured base)
   // instead of a relative one — a relative path resolves against whatever
@@ -21,6 +24,35 @@ export function thumbPath(folder, file) {
   return joinPath("thumbs/" + f, String(file).replace(/\.[^.]+$/, ".webp"));
 }
 
+function photoMeta(folder, file) {
+  const f = (folder || "").replace(/^\/+/, "").replace(/^pictures\/?/, "");
+  return PHOTO_COLORS[(f ? f + "/" : "") + file];
+}
+
+/**
+ * srcset for a picture given by its full path (as used in the lightbox):
+ * 640 / 1080 / 1600px WebP from scripts/thumbs.mjs. Undefined for videos or
+ * paths outside /pictures, so callers can fall back to the plain src.
+ */
+export function srcSetFor(src) {
+  const m = /\/pictures\/(.+)\.[^./]+$/.exec(String(src));
+  if (!m || isVideo(src)) return undefined;
+  const base = import.meta.env.BASE_URL.replace(/\/+$/, "") + "/thumbs/";
+  const rel = m[1].split("/").map(encodeURIComponent).join("/") + ".webp";
+  return `${base}${rel} 640w, ${base}1080/${rel} 1080w, ${base}1600/${rel} 1600w`;
+}
+
+/** Dominant colour of a photo (from scripts/thumbs.mjs), or undefined. */
+export function photoColor(folder, file) {
+  return photoMeta(folder, file)?.[0];
+}
+
+/** Width / height of a photo (from scripts/thumbs.mjs), or null when unknown. */
+export function photoRatio(folder, file) {
+  const m = photoMeta(folder, file);
+  return m && m[1] && m[2] ? m[1] / m[2] : null;
+}
+
 /** onError handler: swap a failed thumbnail for the original file once. */
 export function thumbFallback(original) {
   return (e) => {
@@ -33,7 +65,9 @@ export function thumbFallback(original) {
 
 export function flagSrc(iso) {
   if (!iso || iso.length !== 2) return null;
-  return "https://flagcdn.com/" + iso.toLowerCase() + ".svg";
+  // Copied from the flag-icons package into public/flags by scripts/thumbs.mjs,
+  // so flags load with the site instead of from a third-party CDN.
+  return joinPath("flags", iso.toLowerCase() + ".svg");
 }
 
 export function formatDateRange(start, end) {
@@ -41,7 +75,7 @@ export function formatDateRange(start, end) {
   const s = start ? new Date(start) : null;
   const e = end ? new Date(end) : null;
   const opts = { year: "numeric", month: "short", day: "numeric" };
-  const loc = "nl-NL";
+  const loc = locale();
   if (s && e) {
     if (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth()) {
       return `${s.getDate()}–${e.getDate()} ${s.toLocaleDateString(loc, { month: "short" })} ${s.getFullYear()}`;
@@ -54,7 +88,7 @@ export function formatDateRange(start, end) {
 /** Short handwritten-style caption date: "aug 2026" */
 export function formatMonthYear(date) {
   if (!date) return "";
-  return new Date(date).toLocaleDateString("nl-NL", { month: "short", year: "numeric" }).replace(".", "");
+  return new Date(date).toLocaleDateString(locale(), { month: "short", year: "numeric" }).replace(".", "");
 }
 
 /** Inclusive number of days between start and end; null when either is missing. */
@@ -67,7 +101,7 @@ export function tripDays(v) {
 
 export function formatDays(n) {
   if (!n) return "";
-  return n === 1 ? "1 dag" : `${n} dagen`;
+  return t("days", n);
 }
 
 /** Named stops of a route, in order. */
@@ -83,7 +117,7 @@ export function isVideo(file) {
 /** Human caption for a photo instead of the raw WhatsApp filename. */
 export function photoCaption(v, index, total) {
   const when = formatMonthYear(v.startDate);
-  return `${v.title}${v.location ? ", " + v.location : ""}${when ? " · " + when : ""} (${index + 1}/${total})`;
+  return `${tripText(v).title}${when ? " · " + when : ""} (${index + 1}/${total})`;
 }
 
 export function tripCountryCodes(v) {
