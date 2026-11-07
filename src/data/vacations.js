@@ -23,6 +23,10 @@
 //   "route"       optioneel — een lijst van tussenstops; tekent een lijn op de kaart.
 //                 Vorm: [{ "name": "Plaats", "lat": 0.0, "lon": 0.0 }, ...]
 //                 Tip: zet de beginplaats ook als laatste stop, dan tekent ie een rondreis.
+//                 Optioneel per stop: "by" — hoe je daar kwam: "car", "train", "plane",
+//                 "bus" of "boat". Heeft een route minstens één "by", dan tekent de lijn
+//                 zichzelf en rijdt er een treintje, auto of vliegtuigje mee; "plane"
+//                 wordt een boog. Tussenpunten zonder naam horen bij de etappe erna.
 //
 // Engels: title, location en description per id in src/data/vacations.en.js
 // (alleen wat afwijkt van het Nederlands; de rest valt terug op dit bestand).
@@ -54,9 +58,15 @@ export const VACATIONS = [
         "anshun-brug.jpeg"
       ],
       "route": [
-        { "name": "Chongqing", "lat": 29.5630, "lon": 106.5516 },
-        { "name": "Zhangjiajie", "lat": 29.1171, "lon": 110.4792 },
-        { "name": "Chengdu", "lat": 30.5728, "lon": 104.0668 }
+        { "name": "Amsterdam", "lat": 52.3105, "lon": 4.7683 },
+        { "name": "Beijing", "lat": 40.0799, "lon": 116.6031, "by": "plane" },
+        { "name": "Chongqing", "lat": 29.5630, "lon": 106.5516, "by": "plane" },
+        { "name": "Zhangjiajie", "lat": 29.1171, "lon": 110.4792, "by": "train" },
+        { "name": "Wulingyuan", "lat": 29.3500, "lon": 110.4400, "by": "car" },
+        { "name": "Grand Canyon", "lat": 29.3979, "lon": 110.6988, "by": "car" },
+        { "name": "Tianmenshan", "lat": 29.0499, "lon": 110.4789, "by": "car" },
+        { "name": "Chengdu", "lat": 30.5728, "lon": 104.0668, "by": "plane" },
+        { "name": "Amsterdam", "lat": 52.3105, "lon": 4.7683, "by": "plane" }
       ]
     },
     {

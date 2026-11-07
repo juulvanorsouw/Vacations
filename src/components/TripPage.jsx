@@ -9,6 +9,7 @@ import {
   coverMedia, videoPoster, prefersReducedMotion,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
+import { drawRoute, hasTravelModes, routeFrame } from "@/lib/routeAnim";
 import PHOTO_COLORS from "@/data/photoColors.json";
 
 /** Width of the docked trip panel on desktop; App shrinks the wall by the same amount. */
@@ -391,7 +392,11 @@ function RouteMap({ trip, stops, onOpen }) {
       attribution: t("osmCredit"), maxZoom: 19, className: "tile-paper",
     }).addTo(map);
 
-    const pts = (trip.route || []).filter((p) => typeof p.lat === "number" && typeof p.lon === "number").map((p) => [p.lat, p.lon]);
+    const animated = hasTravelModes(trip.route);
+    const pts = animated
+      ? routeFrame(trip.route)
+      : (trip.route || []).filter((p) => typeof p.lat === "number" && typeof p.lon === "number").map((p) => [p.lat, p.lon]);
+    let stopAnim = null, io = null;
     // Placed photos as small Polaroids where they were taken.
     const spots = tripPhotoSpots(trip).filter((p) => !isVideo(p.file));
     spots.forEach((p, k) => {
@@ -406,8 +411,23 @@ function RouteMap({ trip, stops, onOpen }) {
     });
     const spotPts = spots.map((p) => [p.loc.lat, p.loc.lon]);
     if (pts.length > 1) {
-      L.polyline(pts, { color: "#ffffff", weight: 5, opacity: 0.9 }).addTo(map);
-      L.polyline(pts, { color: "#e2574b", weight: 2.5, opacity: 0.95, dashArray: "6,7" }).addTo(map);
+      if (animated) {
+        // Play the route once the map is mostly on screen, not while it sits below the cover.
+        const layer = L.layerGroup().addTo(map);
+        const home = () => map.flyToBounds(L.latLngBounds([...pts, ...spotPts]), { padding: [24, 24], duration: 0.9 });
+        const play = () => {
+          if (!stopAnim) stopAnim = drawRoute(layer, trip.route, { delay: 250, map, fit: { padding: [24, 24] }, onDone: home });
+        };
+        if ("IntersectionObserver" in window) {
+          io = new IntersectionObserver((entries) => {
+            if (entries.some((e) => e.isIntersecting)) { io.disconnect(); play(); }
+          }, { threshold: 0.6 });
+          io.observe(el.current);
+        } else play();
+      } else {
+        L.polyline(pts, { color: "#ffffff", weight: 5, opacity: 0.9 }).addTo(map);
+        L.polyline(pts, { color: "#e2574b", weight: 2.5, opacity: 0.95, dashArray: "6,7" }).addTo(map);
+      }
       // Numbered stops; a round trip's return to the start is not numbered again.
       const named = trip.route.filter((p) => p.name && typeof p.lat === "number");
       const first = named[0];
@@ -426,7 +446,7 @@ function RouteMap({ trip, stops, onOpen }) {
       L.circleMarker([trip.lat, trip.lon], { radius: 7, color: "#fff", weight: 2.5, fillColor: "#e2574b", fillOpacity: 1 }).addTo(map);
       map.setView([trip.lat, trip.lon], 10);
     }
-    return () => map.remove();
+    return () => { io?.disconnect(); stopAnim?.(); map.remove(); };
   }, [trip]);
 
   if (typeof trip.lat !== "number") return null;

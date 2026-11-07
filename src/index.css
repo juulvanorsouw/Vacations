@@ -311,6 +311,21 @@ body {
 }
 .route-num-sm { width: 17px; height: 17px; font-size: 9px; border-width: 0; box-shadow: none; flex-shrink: 0; }
 
+/* Animated routes: the train, car or plane riding along, and the small
+   badges it leaves on each leg. Map markers keep their own colours. */
+.rv-wrap { background: transparent; border: 0; }
+.rv {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 999px; background: #e2574b; color: #fff;
+  box-shadow: 0 0 0 2px #fff, 0 3px 8px rgba(0, 0, 0, .35);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.rv svg { width: 17px; height: 17px; fill: currentColor; }
+.rv-sm { width: 20px; height: 20px; box-shadow: 0 0 0 1.5px #fff, 0 1px 3px rgba(0, 0, 0, .3); }
+.rv-sm svg { width: 12px; height: 12px; }
+.rv-dot { width: 14px; height: 14px; }
+.rv-out { opacity: 0; transform: scale(.6); }
+
 /* OSM tiles toned down to sit on the paper wall */
 .leaflet-tile-pane .tile-paper { filter: var(--tile-filter); }
 .leaflet-container { font-family: var(--font-sans); background: var(--map-bg); }

@@ -9,6 +9,7 @@ import {
   photoLocation,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
+import { drawRoute, hasTravelModes, routeFrame } from "@/lib/routeAnim";
 
 const CITY_ZOOM = 12;
 const TILTS = [-4, 3, -2, 4, -3, 2];
@@ -69,6 +70,7 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
   const activePlaceRef = useRef(null);
   const tileLayersRef = useRef(null);
   const layersControlRef = useRef(null);
+  const stopRouteAnimRef = useRef(null);
 
   const [sheetTrip, setSheetTrip] = useState(null);
 
@@ -95,7 +97,11 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     });
   }
 
-  function clearRoute() { routesLayerRef.current?.clearLayers(); }
+  function clearRoute() {
+    stopRouteAnimRef.current?.();
+    stopRouteAnimRef.current = null;
+    routesLayerRef.current?.clearLayers();
+  }
 
   function showRouteFor(v) {
     clearRoute();
@@ -106,8 +112,19 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
       .map((p) => [p.lat, p.lon]);
     if (latlngs.length < 2) return;
 
-    L.polyline(latlngs, { color: "#ffffff", weight: 5, opacity: 0.9 }).addTo(routesLayerRef.current);
-    L.polyline(latlngs, { color: "#e2574b", weight: 2.5, opacity: 0.95, dashArray: "6,7" }).addTo(routesLayerRef.current);
+    if (hasTravelModes(v.route)) {
+      // Start once the map has flown to the trip (zoomToVacation takes 0.8s); the
+      // camera then follows each part of the trip and comes back at the end.
+      const pad = coveredPadding(false);
+      stopRouteAnimRef.current = drawRoute(routesLayerRef.current, v.route, {
+        delay: 1000, map: mapRef.current,
+        fit: { paddingTopLeft: pad.topLeft, paddingBottomRight: pad.bottomRight },
+        onDone: () => zoomToVacation(v),
+      });
+    } else {
+      L.polyline(latlngs, { color: "#ffffff", weight: 5, opacity: 0.9 }).addTo(routesLayerRef.current);
+      L.polyline(latlngs, { color: "#e2574b", weight: 2.5, opacity: 0.95, dashArray: "6,7" }).addTo(routesLayerRef.current);
+    }
 
     v.route.forEach((pt) => {
       if (typeof pt.lat !== "number" || !pt.name) return;
@@ -156,7 +173,10 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     const map = mapRef.current;
     if (!map) return;
     const pts = [];
-    v.route?.forEach((p) => { if (typeof p.lat === "number") pts.push([p.lat, p.lon]); });
+    // Frame the drawn path (flight arcs bow outside the stops), leaving out
+    // long-haul flights from home so the trip itself fills the view.
+    if (hasTravelModes(v.route)) pts.push(...routeFrame(v.route));
+    else v.route?.forEach((p) => { if (typeof p.lat === "number") pts.push([p.lat, p.lon]); });
     if (!pts.length && typeof v.lat === "number") pts.push([v.lat, v.lon]);
     // Frame the photo spots too, so every placed photo is in view.
     tripPhotoSpots(v).forEach((p) => pts.push([p.loc.lat, p.loc.lon]));
