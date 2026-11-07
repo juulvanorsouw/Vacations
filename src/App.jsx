@@ -34,6 +34,32 @@ function readHash() {
 export default function App() {
   // Language first: set synchronously so every child renders in it.
   const [lang, setLang] = useState(initialLang);
+
+  // Theme: "light" or "dark" when chosen with the header switch, null to
+  // follow the system. index.html applies a saved choice before first paint.
+  const [theme, setTheme] = useState(() => {
+    try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : null; } catch { return null; }
+  });
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false);
+  useEffect(() => {
+    const mq = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!mq) return;
+    const on = (e) => setSystemDark(e.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const effectiveTheme = theme || (systemDark ? "dark" : "light");
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme) root.setAttribute("data-theme", theme); else root.removeAttribute("data-theme");
+    try { theme ? localStorage.setItem("theme", theme) : localStorage.removeItem("theme"); } catch { /* ignore */ }
+    // Phone address bar colour follows the theme in use.
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+      if (!m.dataset.orig) m.dataset.orig = m.content;
+      m.content = theme ? (theme === "dark" ? "#2a2622" : "#f8f5ef") : m.dataset.orig;
+    });
+  }, [theme]);
+  const toggleTheme = () => setTheme(effectiveTheme === "dark" ? "light" : "dark");
   setI18nLang(lang);
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -155,7 +181,7 @@ export default function App() {
 
   return (
     <>
-      <Header view={view} onViewChange={changeView} tripCount={vacations.length} countryCount={countryCount} lang={lang} onLangChange={setLang} />
+      <Header view={view} onViewChange={changeView} tripCount={vacations.length} countryCount={countryCount} lang={lang} onLangChange={setLang} theme={effectiveTheme} onToggleTheme={toggleTheme} />
 
       <main
         className="fixed left-0 right-0 top-[calc(54px+env(safe-area-inset-top))] bottom-0 overflow-hidden"

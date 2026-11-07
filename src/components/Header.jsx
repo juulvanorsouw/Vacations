@@ -3,7 +3,7 @@ import { t, LANGS } from "@/lib/i18n";
 
 const TABS = ["wall", "map", "world"];
 
-export default function Header({ view, onViewChange, tripCount, countryCount, lang, onLangChange }) {
+export default function Header({ view, onViewChange, tripCount, countryCount, lang, onLangChange, theme, onToggleTheme }) {
   const listRef = useRef(null);
 
   // Arrow keys move between tabs, as a tablist should.
@@ -59,6 +59,23 @@ export default function Header({ view, onViewChange, tripCount, countryCount, la
             <span aria-hidden="true"> · </span>
             <button className="hover:text-ink transition-colors" onClick={() => onViewChange("world")}>{t("countries", countryCount)}</button>
           </span>
+          <button
+            onClick={onToggleTheme}
+            aria-label={theme === "dark" ? t("lightMode") : t("darkMode")}
+            title={theme === "dark" ? t("lightMode") : t("darkMode")}
+            className="w-8 h-8 -my-1 rounded-full flex items-center justify-center text-ink-2 hover:text-ink hover:bg-cream transition-colors"
+          >
+            {theme === "dark" ? (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4.2" />
+                <path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z" />
+              </svg>
+            )}
+          </button>
           <div className="flex items-center gap-1.5" role="group" aria-label={t("language")}>
             {LANGS.map((l, i) => (
               <span key={l} className="flex items-center gap-1.5">

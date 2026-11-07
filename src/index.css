@@ -50,8 +50,10 @@
 
 /* ── Dark: a cork board at night. Prints, tape and map markers keep their own
    light paper (see .print / .tape / .pm), everything else follows the tokens. ── */
+/* Dark follows the system unless you picked a theme with the switch in the
+   header, which sets data-theme="light" or "dark" on <html>. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --wall:      #2a2622;
     --paper:     #35302b;
     --cream:     #3e3832;
@@ -75,6 +77,30 @@
     --attribution-bg: rgba(42, 38, 34, .75);
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --wall:      #2a2622;
+  --paper:     #35302b;
+  --cream:     #3e3832;
+  --ink:       #f3eee6;
+  --ink-2:     #c9c0b4;
+  --pencil:    #9b9186;
+  --line:      #48413a;
+  --line-h:    #5f574d;
+  --pin:       #ef6a5d;
+  --pin-soft:  #4a2b27;
+  --shadow:    0 18px 40px -16px rgba(0, 0, 0, .7);
+  --shadow-sm: 0 6px 16px -8px rgba(0, 0, 0, .6);
+  --dot:       rgba(255, 240, 220, .05);
+  --tape:      rgba(226, 196, 128, .92);
+  --map-bg:        #2f2b27;
+  --world-water:   #24211d;
+  --world-grid:    #322d28;
+  --world-land:    #3e3832;
+  --world-border:  #554d44;
+  --tile-filter:   saturate(.4) sepia(.12) brightness(.78) contrast(1.02);
+  --attribution-bg: rgba(42, 38, 34, .75);
+  color-scheme: dark;
 }
 
 /* Light paper that stays light in both themes. */

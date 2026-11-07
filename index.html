@@ -8,6 +8,11 @@
   <meta name="theme-color" content="#f8f5ef" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#2a2622" media="(prefers-color-scheme: dark)" />
   <meta name="color-scheme" content="light dark" />
+  <script>
+    // Apply a theme chosen with the header switch before the page draws, so it
+    // never flashes the other theme. No choice saved: follow the system.
+    try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t); } catch (e) {}
+  </script>
   <meta property="og:title" content="Juuls reizen · Juul's travels" />
   <meta property="og:description" content="Een fotomuur en kaart van alle reizen van Juul · A photo wall and map of all of Juul's trips." />
   <meta property="og:locale" content="nl_NL" />
