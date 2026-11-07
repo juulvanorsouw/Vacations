@@ -228,7 +228,7 @@ export const VACATIONS = [
       "endDate": "2026-07-03",
       "description": "Een week Oslo in de zomer.",
       "folder": "pictures/oslo-2026-jun",
-      "pictures": []
+      "pictures": ["karl-johan.jpeg"]
     },
     {
       "id": "barcelona-2026",
