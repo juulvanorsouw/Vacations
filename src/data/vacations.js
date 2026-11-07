@@ -744,7 +744,8 @@ export const VACATIONS = [
         "buda-kasteel-nacht.jpeg",
         "kabelbaan-burcht.jpeg",
         "vajdahunyad-kasteel.jpeg",
-        "parlement-donau.jpeg"
+        "parlement-donau.jpeg",
+        "basiliek-esztergom.jpeg"
       ],
       "route": [
         { "name": "Boedapest", "lat": 47.49788, "lon": 19.03993 },
