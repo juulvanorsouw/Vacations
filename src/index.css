@@ -209,7 +209,16 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
 }
 .pm:hover { transform: rotate(0deg) scale(1.15); box-shadow: 0 6px 16px rgba(40, 30, 20, .45); }
-.pm.active { transform: rotate(0deg) scale(1.2); box-shadow: 0 0 0 3px var(--pin), 0 8px 18px rgba(40, 30, 20, .45); }
+/* Selected: lifted and straightened with a deeper shadow and a bigger pin, no hard red ring. */
+.pm.active { transform: rotate(0deg) scale(1.3); box-shadow: 0 12px 24px -6px rgba(40, 30, 20, .6), 0 0 0 1px rgba(40, 30, 20, .1); z-index: 1; }
+.pm.active::before { width: 13px; height: 13px; margin-left: -6.5px; top: -7px; box-shadow: 0 0 0 2px #fff, 0 2px 4px rgba(0, 0, 0, .4); }
+/* Leaflet sets marker images to width:auto (with !important max-width); without
+   the extra specificity a portrait photo shrinks to a strip inside its print. */
+.leaflet-container .leaflet-marker-pane .pm img,
+.leaflet-container .leaflet-marker-pane .photo-pin img {
+  width: 100% !important; height: 100% !important; max-width: none !important; max-height: none !important;
+  object-fit: cover; display: block;
+}
 .pm img { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--cream); }
 .pm .pm-flag { object-fit: cover; }
 .pm .pm-count {
