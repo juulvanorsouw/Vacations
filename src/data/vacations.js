@@ -244,7 +244,9 @@ export const VACATIONS = [
       "pictures": [
         "WhatsApp Image 2026-06-28 at 16.53.33.jpeg",
         "WhatsApp Video 2026-06-28 at 16.54.03.mp4",
-        "WhatsApp Image 2026-06-28 at 16.54.36.jpeg"
+        "WhatsApp Image 2026-06-28 at 16.54.36.jpeg",
+        "plaza-monumental.jpeg",
+        "video-2.mp4"
       ],
       "route": [
         { "name": "Circuit de Catalunya", "lat": 41.56957, "lon": 2.26212 },
@@ -290,7 +292,7 @@ export const VACATIONS = [
       "endDate": "2026-05-17",
       "description": "Een ritje door vier landen: vanuit Oijen via Luik en Hettange-Grande naar Luxemburg Stad, en weer terug. Mooie stadsgezichten, groene dalen en de indrukwekkende staatsbank op de Place de Metz.",
       "folder": "pictures/luxembourg-2026",
-      "pictures": ["staatsbank-luxemburg.jpeg"],
+      "pictures": ["staatsbank-luxemburg.jpeg", "rotskloof-trap.jpeg"],
       "route": [
         { "name": "Oijen", "lat": 51.80182, "lon": 5.54471 },
         { "name": "", "lat": 51.80225, "lon": 5.56118 },
@@ -759,6 +761,19 @@ export const VACATIONS = [
       ]
     },
     {
+      "id": "oslo-2025-apr",
+      "title": "Oslo",
+      "location": "Oslo, Noorwegen",
+      "country": "NO",
+      "lat": 59.9180,
+      "lon": 10.7600,
+      "startDate": "2025-04-01",
+      "endDate": "2025-04-08",
+      "description": "Een week Oslo in het voorjaar.",
+      "folder": "pictures/oslo-2025-apr",
+      "pictures": ["video-1.mp4"]
+    },
+    {
       "id": "budapest-2025",
       "title": "Boedapest",
       "location": "Boedapest, Hongarije",
@@ -809,6 +824,19 @@ export const VACATIONS = [
         { "name": "", "lat": 47.5075, "lon": 19.02215 },
         { "name": "Boedapest", "lat": 47.49788, "lon": 19.03993 }
       ]
+    },
+    {
+      "id": "oslo-2024-dec",
+      "title": "Oslo",
+      "location": "Oslo, Noorwegen",
+      "country": "NO",
+      "lat": 59.9180,
+      "lon": 10.7600,
+      "startDate": "2024-12-03",
+      "endDate": "2024-12-10",
+      "description": "Een decemberweek in Oslo met een wandeling door het besneeuwde bos.",
+      "folder": "pictures/oslo-2024-dec",
+      "pictures": ["besneeuwd-bos.jpeg"]
     },
     {
       "id": "alanya-2024",
