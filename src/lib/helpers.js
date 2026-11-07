@@ -104,6 +104,43 @@ export function formatDays(n) {
   return t("days", n);
 }
 
+/** A longer stay ("kind": "stay"), such as living somewhere for months, rather than a trip. */
+export function isStay(v) {
+  return v.kind === "stay";
+}
+
+/** Short month span: "feb – jun 2024", or "dec 2023 – feb 2024" across years. */
+export function formatMonthSpan(start, end) {
+  if (!start || !end) return formatMonthYear(start || end);
+  const s = new Date(start), e = new Date(end);
+  if (s.getFullYear() !== e.getFullYear()) return `${formatMonthYear(start)} – ${formatMonthYear(end)}`;
+  const month = s.toLocaleDateString(locale(), { month: "short" }).replace(".", "");
+  return `${month} – ${formatMonthYear(end)}`;
+}
+
+/** Caption date: the month a trip started, or the month span of a stay. */
+export function captionDate(v) {
+  return isStay(v) ? formatMonthSpan(v.startDate, v.endDate) : formatMonthYear(v.startDate);
+}
+
+/** "5 dagen" for a trip, "5 maanden" for a stay; "" when the dates are missing. */
+export function formatDuration(v) {
+  const days = tripDays(v);
+  if (!days) return "";
+  if (isStay(v)) return t("months", Math.max(1, Math.round(days / 30.44)));
+  return formatDays(days);
+}
+
+/**
+ * The trip's cover photo: "cover" when set (and present in pictures),
+ * otherwise the first picture that is not a video. Null when there is none.
+ */
+export function coverOf(v) {
+  const pics = v.pictures || [];
+  if (v.cover && pics.includes(v.cover) && !isVideo(v.cover)) return v.cover;
+  return pics.find((p) => !isVideo(p)) || null;
+}
+
 /** Named stops of a route, in order. */
 export function routeStops(v) {
   if (!v.route || v.route.length < 2) return [];
@@ -157,9 +194,14 @@ export function groupByPlace(vacations, radiusKm = 15) {
   return groups;
 }
 
-/** "3e bezoek" style label: how many times this place was visited up to and including this trip. */
+/**
+ * "3e bezoek" style label: how many times this place was visited up to and
+ * including this trip. Stays (living there) are not visits and are skipped.
+ */
 export function visitIndex(v, group) {
-  if (!group || group.trips.length < 2) return null;
-  const chronological = group.trips.slice().reverse();
-  return { n: chronological.findIndex((t) => t.id === v.id) + 1, total: group.trips.length };
+  if (!group || isStay(v)) return null;
+  const visits = group.trips.filter((t) => !isStay(t));
+  if (visits.length < 2) return null;
+  const chronological = visits.slice().reverse();
+  return { n: chronological.findIndex((t) => t.id === v.id) + 1, total: visits.length };
 }

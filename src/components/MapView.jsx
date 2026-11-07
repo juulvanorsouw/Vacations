@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import FlagImg from "@/components/FlagImg";
 import {
   joinPath, thumbPath, thumbFallback, photoColor, formatDateRange, formatMonthYear, groupByPlace,
-  tripDays, formatDays, routeStops, isVideo, visitIndex, photoCaption,
+  formatDuration, routeStops, isVideo, visitIndex, photoCaption, coverOf,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
 
@@ -18,7 +18,7 @@ const DESKTOP_PANEL = 380 + 16; // width of the side card plus its margin
 const isPhone = () => window.innerWidth < 640;
 
 function firstImage(v) {
-  const p = (v.pictures || []).find((f) => !isVideo(f));
+  const p = coverOf(v);
   return p && v.folder ? { thumb: thumbPath(v.folder, p), full: joinPath(v.folder, p), color: photoColor(v.folder, p) } : null;
 }
 
@@ -311,7 +311,7 @@ function TripSheetPanel({ v, place, onClose, onPick, onNav, onExpand, onDetails,
   const pics = v.pictures || [];
   const touch = useRef(null);
   const stops = routeStops(v);
-  const days = tripDays(v);
+  const duration = formatDuration(v);
   const visit = visitIndex(v, place);
   const srcs = pics.map((p) => joinPath(v.folder, p));
   const captions = pics.map((_, i) => photoCaption(v, i, pics.length));
@@ -367,8 +367,8 @@ function TripSheetPanel({ v, place, onClose, onPick, onNav, onExpand, onDetails,
             <div className="font-hand text-[32px] text-ink leading-none mb-1 truncate">{text.title}</div>
             <div className="text-[13px] text-ink-2 tabular-nums">
               {formatDateRange(v.startDate, v.endDate)}
-              {days ? ` · ${formatDays(days)}` : ""}
-              {visit ? ` · ${t("nthVisit", visit.n)}` : ""}
+              {duration ? <span className="whitespace-nowrap">{` · ${duration}`}</span> : null}
+              {visit ? <span className="whitespace-nowrap">{` · ${t("nthVisit", visit.n)}`}</span> : null}
             </div>
           </div>
           <div className="flex gap-1.5 shrink-0">
