@@ -29,6 +29,37 @@
 
 export const VACATIONS = [
     {
+      "id": "china-2026",
+      "title": "China",
+      "location": "Chongqing, Zhangjiajie en Chengdu, China",
+      "country": "CN",
+      "lat": 29.5630,
+      "lon": 106.5516,
+      "startDate": "2026-10-24",
+      "endDate": "2026-11-03",
+      "description": "Elf dagen China: eerst Chongqing met Hongyadong bij nacht, met de hogesnelheidstrein naar de zuilenbergen van Zhangjiajie, en met het vliegtuig door naar Chengdu.",
+      "folder": "pictures/china-2026",
+      "cover": "hongyadong-nacht.jpeg",
+      "pictures": [
+        "hongyadong-nacht.jpeg",
+        "grote-volkshal.jpeg",
+        "avondmarkt-chongqing.mp4",
+        "avatar-bergen.jpeg",
+        "klederdracht.jpeg",
+        "aap.jpeg",
+        "klimmer-in-de-mist.jpeg",
+        "rotspad.mp4",
+        "uitzicht-bergen.mp4",
+        "huwelijksmarkt-volkspark.jpeg",
+        "anshun-brug.jpeg"
+      ],
+      "route": [
+        { "name": "Chongqing", "lat": 29.5630, "lon": 106.5516 },
+        { "name": "Zhangjiajie", "lat": 29.1171, "lon": 110.4792 },
+        { "name": "Chengdu", "lat": 30.5728, "lon": 104.0668 }
+      ]
+    },
+    {
       "id": "oslo-2026-okt",
       "title": "Oslo",
       "location": "Oslo, Noorwegen",

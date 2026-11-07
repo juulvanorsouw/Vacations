@@ -3,6 +3,7 @@
 // When you add a trip, add its English description here too.
 
 export const TRIPS_EN = {
+  "china-2026": { location: "Chongqing, Zhangjiajie and Chengdu, China", description: "Eleven days in China: Chongqing first, with Hongyadong lit up at night, then the high-speed train to the stone pillars of Zhangjiajie, and a flight on to Chengdu." },
   "oslo-2026-okt": { location: "Oslo, Norway", description: "Autumn in Oslo: a fjord sauna by the opera house and a sunset over Akershus." },
   "ochtrup-2026": { location: "Ochtrup, Germany", description: "A weekend with the guys in Ochtrup: football inside an old church and the Designer Outlet." },
   "alsace-2026": { location: "Alsace, France", description: "Another week travelling through Alsace." },
