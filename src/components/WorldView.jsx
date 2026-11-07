@@ -6,7 +6,7 @@ import { visitedCountrySet } from "@/lib/helpers";
 import { t, getLang, countryName } from "@/lib/i18n";
 
 // Colours come from CSS variables (index.css) so the map follows dark mode.
-const WATER = "var(--world-water)", GRID = "var(--world-grid)", VISITED = "var(--pin)", UNVISITED = "var(--world-land)", BORDER = "var(--world-border)";
+const WATER = "var(--world-water)", GRID = "var(--world-grid)", VISITED = "var(--pin)", UNVISITED = "var(--world-land)", BORDER = "var(--world-border)", SMALL = "var(--world-small)";
 
 const NUM_TO_ISO2 = Object.fromEntries(Object.entries(ISO2_TO_NUM).map(([iso, n]) => [n, iso]));
 
@@ -30,7 +30,9 @@ export default function WorldView({ vacations, active, lang }) { // eslint-disab
     if (!active || loaded) return;
     // Bundled with the site (public/data) so the view also works offline or
     // when a CDN is blocked.
-    fetch(import.meta.env.BASE_URL + "data/countries-110m.json")
+    // 50m detail: the coarser 110m file has no Monaco, Liechtenstein, San Marino,
+    // Vatican, Andorra or Malta at all, so those could never light up.
+    fetch(import.meta.env.BASE_URL + "data/countries-50m.json")
       .then((r) => { if (!r.ok) throw new Error(r.statusText); return r.json(); })
       .then((data) => { stateRef.current.worldData = data; drawWorldMap(data); setLoaded(true); })
       .catch((err) => { console.warn("Wereldkaart kon niet laden:", err); setError("worldMapError"); });
@@ -53,9 +55,21 @@ export default function WorldView({ vacations, active, lang }) { // eslint-disab
     svg.selectAll("*").remove();
 
     const g = svg.append("g");
-    const zoom = d3.zoom().scaleExtent([1, 8]).translateExtent([[0, 0], [W, H]]).on("zoom", (e) => g.attr("transform", e.transform));
+    // Keep the view inside the globe, so zooming in never shows the empty
+    // space above the Arctic (a wide band on portrait phones).
+    const sphereBounds = pathGen.bounds({ type: "Sphere" });
+    const dots = { current: null };
+    // viewBox units per screen pixel, so dots can be sized in real pixels.
+    const unitsPerPx = () => W / (el.clientWidth || W);
+    const sizeDots = (k) => dots.current
+      ?.attr("r", function () { return ((this.dataset.visited ? 5.5 : 4) * unitsPerPx()) / k; })
+      .attr("stroke-width", (1.5 * unitsPerPx()) / k);
+    const zoom = d3.zoom().scaleExtent([1, 14]).translateExtent(sphereBounds).on("zoom", (e) => {
+      g.attr("transform", e.transform);
+      sizeDots(e.transform.k); // dots keep the same size on screen whatever the zoom
+    });
     svg.call(zoom);
-    stateRef.current = { ...stateRef.current, projection, zoom, svg, W, H };
+    stateRef.current = { ...stateRef.current, projection, zoom, svg, W, H, sizeDots };
 
     g.append("path").datum({ type: "Sphere" }).attr("d", pathGen).style("fill", WATER).style("stroke", BORDER).attr("stroke-width", 0.6);
     g.append("path").datum(d3.geoGraticule()()).attr("d", pathGen).style("fill", "none").style("stroke", GRID).attr("stroke-width", 0.35);
@@ -66,9 +80,25 @@ export default function WorldView({ vacations, active, lang }) { // eslint-disab
       return [lx / ring.length, ly / ring.length];
     }
 
+    let hideTimer = 0;
+    function nameOf(id) {
+      const iso = NUM_TO_ISO2[id];
+      if (getLang() === "en" && iso) return countryName(iso);
+      return LAND_NAMEN[id] || (iso ? countryName(iso) : "");
+    }
+    function showName(e, id, isVis, forMs) {
+      const name = nameOf(id), tip = tooltipRef.current;
+      if (!name || !tip) return;
+      tip.textContent = name + (isVis ? " ✓" : "");
+      tip.style.opacity = "1";
+      tip.style.left = e.clientX + 14 + "px";
+      tip.style.top = e.clientY - 36 + "px";
+      clearTimeout(hideTimer);
+      if (forMs) hideTimer = setTimeout(hideName, forMs);
+    }
+    function hideName() { if (tooltipRef.current) tooltipRef.current.style.opacity = "0"; }
+
     function addPath(geom, id, isVis) {
-      // Read the name when hovering, so it follows a language switch.
-      const nameOf = () => { const iso = NUM_TO_ISO2[id]; return getLang() === "en" && iso ? countryName(iso) : LAND_NAMEN[id] || ""; };
       g.append("path")
         .datum({ type: "Feature", geometry: geom })
         .attr("class", "world-country" + (isVis ? " visited" : ""))
@@ -77,15 +107,10 @@ export default function WorldView({ vacations, active, lang }) { // eslint-disab
         .style("stroke", "none")
         .style("transition", "opacity .12s")
         .on("mouseenter", function () { if (isVis) d3.select(this).style("opacity", 0.8); })
-        .on("mousemove", (e) => {
-          const name = nameOf();
-          if (!name || !tooltipRef.current) return;
-          tooltipRef.current.textContent = name + (isVis ? " ✓" : "");
-          tooltipRef.current.style.opacity = "1";
-          tooltipRef.current.style.left = e.clientX + 14 + "px";
-          tooltipRef.current.style.top = e.clientY - 36 + "px";
-        })
-        .on("mouseleave", function () { d3.select(this).style("opacity", 1); if (tooltipRef.current) tooltipRef.current.style.opacity = "0"; });
+        .on("mousemove", (e) => showName(e, id, isVis))
+        .on("mouseleave", function () { d3.select(this).style("opacity", 1); hideName(); })
+        // Touch screens get no hover: a tap shows the name for a moment.
+        .on("click", (e) => showName(e, id, isVis, 1800));
     }
 
     countries.features.forEach((feat) => {
@@ -105,6 +130,28 @@ export default function WorldView({ vacations, active, lang }) { // eslint-disab
 
     g.append("path").datum(borders).attr("d", pathGen).style("fill", "none").style("stroke", BORDER).attr("stroke-width", 0.45);
 
+    // Countries too small to see as a shape at world view (Monaco, Andorra,
+    // Liechtenstein, Vatican City, Malta, ...; Luxembourg is just big enough) get a dot: red when
+    // visited, grey when not. Only countries the counter counts, so overseas
+    // islands and territories don't clutter the map; bigger ones stay shapes.
+    const counted = new Set(Object.values(CONTINENT_COUNTRIES).flat().map((iso) => ISO2_TO_NUM[iso]).filter(Boolean));
+    // Size per country across all its pieces: the map data gives some remote
+    // islands their country's code (Ashmore Reef is "Australia"), and those
+    // must not count as a tiny country.
+    const sizeOf = (f) => { const [[x0, y0], [x1, y1]] = pathGen.bounds(f); return Math.max(x1 - x0, y1 - y0); };
+    const biggest = new Map();
+    countries.features.forEach((f) => biggest.set(+f.id, Math.max(biggest.get(+f.id) || 0, sizeOf(f))));
+    const tiny = countries.features.filter((f) => counted.has(+f.id) && biggest.get(+f.id) < 1.5).sort((a, b) => visited.has(+a.id) - visited.has(+b.id)); // red dots on top
+    dots.current = g.append("g").selectAll("circle").data(tiny).join("circle")
+      .attr("cx", (f) => pathGen.centroid(f)[0]).attr("cy", (f) => pathGen.centroid(f)[1])
+      .attr("data-visited", (f) => (visited.has(+f.id) ? "1" : null))
+      .style("fill", (f) => (visited.has(+f.id) ? VISITED : SMALL))
+      .style("stroke", "#fff").style("cursor", "pointer")
+      .on("mousemove", (e, f) => showName(e, +f.id, visited.has(+f.id)))
+      .on("mouseleave", hideName)
+      .on("click", (e, f) => { e.stopPropagation(); showName(e, +f.id, visited.has(+f.id), 1800); });
+
+    sizeDots(1);
     computeStats(visited);
     // 20 of the 21 countries are in Europe: on a phone, start there.
     if (el.clientWidth < 640) zoomToContinent("Europa", false);
@@ -135,9 +182,12 @@ export default function WorldView({ vacations, active, lang }) { // eslint-disab
     const proj = corners.map((c) => projection(c));
     const xs = proj.map((p) => p[0]), ys = proj.map((p) => p[1]);
     const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const scale = Math.min(8, 0.88 * Math.min(W / (x1 - x0), H / (y1 - y0)));
+    const scale = Math.min(14, 0.88 * Math.min(W / (x1 - x0), H / (y1 - y0)));
     const tx = W / 2 - scale * (x0 + x1) / 2, ty = H / 2 - scale * (y0 + y1) / 2;
-    target.call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+    // zoom.transform applies a transform as-is, so clamp it to the globe ourselves
+    // (the same clamp dragging and pinching get).
+    const clamped = zoom.constrain()(d3.zoomIdentity.translate(tx, ty).scale(scale), [[0, 0], [W, H]], zoom.translateExtent());
+    target.call(zoom.transform, clamped);
   }
 
 

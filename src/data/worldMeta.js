@@ -20,7 +20,7 @@ export const ISO2_TO_NUM = {
   "NA":516,"NP":524,"NL":528,"NZ":554,"NI":558,"NE":562,"NG":566,
   "MK":807,"NO":578,"OM":512,"PK":586,"PA":591,"PG":598,"PY":600,
   "PE":604,"PH":608,"PL":616,"PT":620,"QA":634,"RO":642,"RU":643,
-  "RW":646,"SM":674,"ST":678,"SA":682,"SN":686,"RS":688,"SC":690,
+  "RW":646,"SM":674,"VA":336,"ST":678,"SA":682,"SN":686,"RS":688,"SC":690,
   "SL":694,"SG":702,"SK":703,"SI":705,"SO":706,"ZA":710,"SS":728,
   "ES":724,"LK":144,"SD":729,"SR":740,"SZ":748,"SE":752,"CH":756,
   "SY":760,"TJ":762,"TZ":834,"TH":764,"TG":768,"TO":776,"TT":780,
@@ -43,7 +43,7 @@ export const LAND_NAMEN = {
   400:"Jordanië",404:"Kenia",408:"Noord-Korea",410:"Zuid-Korea",
   414:"Koeweit",428:"Letland",422:"Libanon",434:"Libië",438:"Liechtenstein",
   440:"Litouwen",442:"Luxemburg",450:"Madagaskar",466:"Mali",470:"Malta",
-  484:"Mexico",498:"Moldavië",492:"Monaco",496:"Mongolië",499:"Montenegro",
+  484:"Mexico",498:"Moldavië",492:"Monaco",336:"Vaticaanstad",496:"Mongolië",499:"Montenegro",
   504:"Marokko",508:"Mozambique",104:"Myanmar",516:"Namibië",524:"Nepal",
   528:"Nederland",554:"Nieuw-Zeeland",562:"Niger",566:"Nigeria",
   807:"Noord-Macedonië",578:"Noorwegen",512:"Oman",586:"Pakistan",
@@ -80,7 +80,7 @@ export const CONTINENT_BOUNDS = {
 };
 
 export const CONTINENT_COUNTRIES = {
-  "Europa":        ["AL","AD","AT","BY","BE","BA","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IS","IE","IT","XK","LV","LI","LT","LU","MT","MD","MC","ME","NL","MK","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","GB"],
+  "Europa":        ["AL","AD","AT","BY","BE","BA","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IS","IE","IT","XK","LV","LI","LT","LU","MT","MD","MC","ME","NL","MK","NO","PL","PT","RO","RU","SM","RS","SK","SI","ES","SE","CH","UA","GB","VA"],
   "Azië":          ["AF","AM","AZ","BH","BD","BT","BN","KH","CN","GE","IN","ID","IR","IQ","IL","JP","JO","KZ","KW","KG","LA","LB","MY","MV","MN","MM","NP","KP","KR","OM","PK","PS","PH","QA","SA","SG","LK","SY","TJ","TH","TR","TM","AE","UZ","VN","YE"],
   "Afrika":        ["DZ","AO","BJ","BW","BF","BI","CM","CV","CF","TD","KM","CG","CD","CI","DJ","EG","GQ","ER","ET","GA","GM","GH","GN","GW","KE","LS","LR","LY","MG","MW","ML","MR","MU","MA","MZ","NA","NE","NG","RW","ST","SN","SC","SL","SO","ZA","SS","SD","SZ","TZ","TG","TN","UG","ZM","ZW"],
   "Noord-Amerika": ["AG","BS","BB","BZ","CA","CR","CU","DM","DO","SV","GD","GT","HT","HN","JM","MX","NI","PA","KN","LC","VC","TT","US"],

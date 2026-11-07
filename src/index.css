@@ -21,6 +21,7 @@
   --world-grid:    #ddd6c8;
   --world-land:    #fbf9f4;
   --world-border:  #cfc5b5;
+  --world-small:   #a39a8e;
   --tile-filter:   saturate(.45) sepia(.14) brightness(1.04) contrast(.95);
   --attribution-bg: rgba(255, 255, 255, .7);
 
@@ -73,6 +74,7 @@
     --world-grid:    #322d28;
     --world-land:    #3e3832;
     --world-border:  #554d44;
+    --world-small:   #8a8177;
     --tile-filter:   saturate(.4) sepia(.12) brightness(.78) contrast(1.02);
     --attribution-bg: rgba(42, 38, 34, .75);
     color-scheme: dark;
@@ -98,6 +100,7 @@
   --world-grid:    #322d28;
   --world-land:    #3e3832;
   --world-border:  #554d44;
+    --world-small:   #8a8177;
   --tile-filter:   saturate(.4) sepia(.12) brightness(.78) contrast(1.02);
   --attribution-bg: rgba(42, 38, 34, .75);
   color-scheme: dark;
