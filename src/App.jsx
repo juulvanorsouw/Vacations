@@ -3,7 +3,7 @@ import { AnimatePresence } from "motion/react";
 import Header from "@/components/Header";
 import MapView from "@/components/MapView";
 import WallView from "@/components/WallView";
-import TripPage from "@/components/TripPage";
+import TripPage, { PANEL_WIDTH } from "@/components/TripPage";
 import Lightbox from "@/components/Lightbox";
 import { VACATIONS } from "@/data/vacations";
 import { visitedCountrySet } from "@/lib/helpers";
@@ -13,6 +13,19 @@ const VIEWS = ["wall", "map", "world"];
 
 // The world map pulls in d3; load it the first time someone opens that tab.
 const WorldView = lazy(() => import("@/components/WorldView"));
+
+// Desktop (>= 1024px) docks the trip page on the right; smaller screens get it full screen.
+const DESKTOP = "(min-width: 1024px)";
+function useMediaQuery(query) {
+  const [match, setMatch] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setMatch(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [query]);
+  return match;
+}
 
 function readHash() {
   return decodeURIComponent((window.location.hash || "").slice(1));
@@ -44,6 +57,7 @@ export default function App() {
   const [worldSeen, setWorldSeen] = useState(view === "world");
   useEffect(() => { if (view === "world") setWorldSeen(true); }, [view]);
   const mapRef = useRef(null);
+  const docked = useMediaQuery(DESKTOP);
 
   const modalIdx = useMemo(() => vacations.findIndex((v) => v.id === modalTripId), [vacations, modalTripId]);
   const modalTrip = modalIdx >= 0 ? vacations[modalIdx] : null;
@@ -52,7 +66,10 @@ export default function App() {
   // gesture (or the browser back button) closes it. Moving to a neighbouring
   // trip replaces that entry, so back always returns to where you came from.
   function openTrip(id) {
-    if (readHash() !== id) history.pushState({ trip: id }, "", "#" + id);
+    // On desktop the wall stays usable next to the panel: picking another trip
+    // there swaps the panel's entry instead of stacking a new one.
+    if (history.state?.trip) history.replaceState({ trip: id }, "", "#" + id);
+    else if (readHash() !== id) history.pushState({ trip: id }, "", "#" + id);
     setModalTripId(id);
   }
   function goToTrip(id) {
@@ -64,6 +81,13 @@ export default function App() {
     else setModalTripId(null);
   }
   function closeLightbox() { setLightbox(null); }
+
+  // Switching views from the header (only reachable with the docked panel)
+  // closes the trip; its history entry becomes the new view's.
+  function changeView(v) {
+    if (modalTripId) setModalTripId(null);
+    setView(v);
+  }
 
   function handleViewOnMap(id) {
     // Swap the trip entry for the map, so back from the map returns to the wall.
@@ -120,15 +144,20 @@ export default function App() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [lightbox, modalTrip, modalIdx, view, vacations]);
 
+  // The map also resizes when the docked trip panel narrows or widens it.
+  const panelOpen = docked && !!modalTrip;
   useEffect(() => {
     if (view === "map") setTimeout(() => mapRef.current?.invalidateSize(), 50);
-  }, [view]);
+  }, [view, panelOpen]);
 
   return (
     <>
-      <Header view={view} onViewChange={setView} tripCount={vacations.length} countryCount={countryCount} lang={lang} onLangChange={setLang} />
+      <Header view={view} onViewChange={changeView} tripCount={vacations.length} countryCount={countryCount} lang={lang} onLangChange={setLang} />
 
-      <main className="fixed inset-x-0 top-[calc(54px+env(safe-area-inset-top))] bottom-0 overflow-hidden">
+      <main
+        className="fixed left-0 right-0 top-[calc(54px+env(safe-area-inset-top))] bottom-0 overflow-hidden"
+        style={docked && modalTrip ? { right: PANEL_WIDTH } : undefined}
+      >
         <div className={`absolute inset-0 overflow-y-auto transition-opacity duration-200 ${view === "wall" ? "opacity-100 visible" : "opacity-0 invisible"}`}>
           <WallView vacations={vacations} countryCount={countryCount} onOpenModal={openTrip} />
         </div>
@@ -151,6 +180,7 @@ export default function App() {
             trip={modalTrip}
             newer={vacations[modalIdx - 1] || null}
             older={vacations[modalIdx + 1] || null}
+            docked={docked}
             onClose={closeTrip}
             onGoTo={goToTrip}
             onOpenLightbox={openLightbox}
