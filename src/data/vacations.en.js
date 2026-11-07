@@ -23,6 +23,6 @@ export const TRIPS_EN = {
   "nideggen-2024": { location: "Nideggen, Germany", description: "A long weekend in the Eifel near the historic little town of Nideggen." },
   "alanya-2024": { location: "Alanya, Turkey", description: "A week in Alanya on the Turkish Riviera, looking out from the castle over the harbour and the Red Tower." },
   "kos-2024": { location: "Kos, Greece", description: "A week on the Greek island of Kos." },
-  "oslo-2024": { description: "Saturnveien 8 and Tverrbakken 4, 0475 Oslo." },
+  "oslo-2024": { location: "Oslo, Norway", description: "Five months living in Oslo, from February to the end of June." },
   "tallinn-2023": { location: "Tallinn, Estonia", description: "A week in Tallinn with a stop in Helsinki." },
 };

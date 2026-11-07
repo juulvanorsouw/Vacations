@@ -1,10 +1,31 @@
 // Vakantiedata — bewerk dit bestand om reizen toe te voegen of bij te werken.
 // Laat de regel "export const VACATIONS =" bovenaan en de afsluitende ";" staan.
+// Volgorde: nieuwste reis bovenaan.
 //
-// "country" is een ISO-landcode (bv "NO" voor Noorwegen).
-// "route" is optioneel — een lijst van tussenstops; tekent een lijn op de kaart.
-//   Vorm: [{ "name": "Plaats", "lat": 0.0, "lon": 0.0 }, ...]
-// Tip: zet de beginplaats ook als laatste stop, dan tekent ie een rondreis.
+// Velden per reis:
+//   "id"          unieke naam, ook de URL (#alsace-2026) en de sleutel in vacations.en.js
+//   "title"       korte naam op de muur en de kaart (Nederlands)
+//   "location"    "Plaats, Land" (Nederlands)
+//   "country"     ISO-landcode van het hoofdland (bv "NO" voor Noorwegen)
+//   "countries"   optioneel — alle bezochte landen, bv ["HU", "SK"]
+//   "lat", "lon"  waar de pin op de kaart staat
+//   "startDate", "endDate"  "JJJJ-MM-DD"
+//   "description" één of twee zinnen voor de reispagina en de kaart (Nederlands)
+//   "folder"      map met de foto's, bv "pictures/alsace-2026"
+//   "pictures"    bestandsnamen in die map, in de volgorde waarin ze genomen zijn;
+//                 video's (.mp4/.webm/.mov) mogen ertussen
+//   "cover"       optioneel — welke foto de omslag is op de muur en de kaart;
+//                 zonder cover is het de eerste foto (geen video) in "pictures"
+//   "notes"       optioneel — privé-aantekeningen, worden nergens getoond
+//   "kind"        optioneel — "stay" voor een verblijf van maanden (ergens wonen):
+//                 de muur toont dan "feb – jun 2024 · 5 maanden" en het telt
+//                 niet mee als bezoek op de kaart
+//   "route"       optioneel — een lijst van tussenstops; tekent een lijn op de kaart.
+//                 Vorm: [{ "name": "Plaats", "lat": 0.0, "lon": 0.0 }, ...]
+//                 Tip: zet de beginplaats ook als laatste stop, dan tekent ie een rondreis.
+//
+// Engels: title, location en description per id in src/data/vacations.en.js
+// (alleen wat afwijkt van het Nederlands; de rest valt terug op dit bestand).
 
 export const VACATIONS = [
     {
@@ -52,6 +73,7 @@ export const VACATIONS = [
       "endDate": "2026-08-14",
       "description": "Opnieuw een week door de Alsace.",
       "folder": "pictures/alsace-2026",
+      "cover": "groepsfoto-maskers.jpeg",
       "pictures": [
         "groepsfoto-maskers.jpeg",
         "petite-france-straatsburg.jpeg",
@@ -573,6 +595,7 @@ export const VACATIONS = [
       "endDate": "2025-05-27",
       "description": "Een rondreis door Montenegro en de Balkan met bergwandelingen, de baai van Kotor en turkooizen rivieren.",
       "folder": "pictures/tivat-2025",
+      "cover": "billboard-kotor.jpeg",
       "pictures": [
         "billboard-kotor.jpeg",
         "berggeit.jpeg",
@@ -716,6 +739,7 @@ export const VACATIONS = [
       "endDate": "2025-03-09",
       "description": "Een week in Boedapest met daguitstapjes naar Esztergom en het Slowaakse Štúrovo aan de overkant van de Donau.",
       "folder": "pictures/budapest-2025",
+      "cover": "buda-kasteel-nacht.jpeg",
       "pictures": [
         "buda-kasteel-nacht.jpeg",
         "kabelbaan-burcht.jpeg",
@@ -792,24 +816,28 @@ export const VACATIONS = [
       "lon": 27.2877,
       "startDate": "2024-07-01",
       "endDate": "2024-07-08",
-      "description": "Een week op het Griekse eiland Kos. (Datums zijn een schatting — pas aan in vacations.js zodra je ze weet.)",
+      "description": "Een week op het Griekse eiland Kos.",
+      "notes": "Datums zijn een schatting — pas aan in vacations.js zodra je ze weet.",
       "folder": "pictures/kos-2024",
       "pictures": ["groepsdiner.jpeg"]
     },
     {
       "id": "oslo-2024",
       "title": "Oslo",
-      "location": "Tverrbakken 4, 0475 Oslo",
+      "location": "Oslo, Noorwegen",
+      "kind": "stay",
       "country": "NO",
       "lat": 59.9441,
       "lon": 10.7476,
       "startDate": "2024-02-01",
       "endDate": "2024-06-28",
-      "description": "Saturnveien 8 en Tverrbakken 4, 0475 Oslo.",
+      "description": "Vijf maanden in Oslo gewoond, van februari tot eind juni.",
+      "notes": "Adressen: Saturnveien 8 en Tverrbakken 4, 0475 Oslo.",
       "folder": "pictures/oslo-2024",
+      "cover": "foto-2.jpeg",
       "pictures": [
-        "foto-2.jpeg",
         "foto-1.jpeg",
+        "foto-2.jpeg",
         "foto-3.jpeg",
         "foto-4.jpeg",
         "video-1.mp4"

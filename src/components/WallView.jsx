@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import FlagImg from "@/components/FlagImg";
 import { t, tripText } from "@/lib/i18n";
-import { joinPath, thumbPath, thumbFallback, formatMonthYear, tripDays, formatDays, isVideo, photoColor, photoRatio } from "@/lib/helpers";
+import { joinPath, thumbPath, thumbFallback, captionDate, formatDuration, isStay, isVideo, photoColor, photoRatio, coverOf } from "@/lib/helpers";
 
 // Pseudo-random but deterministic per trip id, so the wall looks hand-pinned
 // (uneven tilt, nudge and size) yet never shuffles between renders.
@@ -24,7 +24,7 @@ function scatter(id) {
 // Prints keep the photo's own shape, within 2:3 portrait and 3:2 landscape so a
 // tall phone screenshot never becomes a skyscraper.
 function coverRatio(v) {
-  const p = (v.pictures || []).find((f) => !isVideo(f));
+  const p = coverOf(v);
   const r = p ? photoRatio(v.folder, p) : null;
   return Math.min(1.5, Math.max(2 / 3, r || 1));
 }
@@ -160,12 +160,12 @@ export default function WallView({ vacations, countryCount, onOpenModal }) {
 
 function Print({ v, scatter, onOpen }) {
   const pics = v.pictures || [];
-  const firstImg = pics.find((p) => !isVideo(p));
+  const firstImg = coverOf(v);
   const firstVid = !firstImg && pics.find(isVideo);
   const src = firstImg ? thumbPath(v.folder, firstImg) : firstVid ? joinPath(v.folder, firstVid) : null;
   const original = firstImg ? joinPath(v.folder, firstImg) : null;
-  const days = tripDays(v);
-  const when = formatMonthYear(v.startDate);
+  const duration = formatDuration(v);
+  const when = captionDate(v);
   const ratio = coverRatio(v);
   const { title } = tripText(v);
 
@@ -177,7 +177,7 @@ function Print({ v, scatter, onOpen }) {
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
       className="print relative cursor-pointer"
       style={{ "--tilt": `${scatter.tilt}deg`, "--dx": `${scatter.dx}px`, "--dy": `${scatter.dy}px`, "--s": scatter.scale }}
-      aria-label={`${title}, ${when}${days ? ", " + formatDays(days) : ""}${pics.length ? "" : ", " + t("noPhotosYet")}`}
+      aria-label={`${title}, ${when}${duration ? ", " + duration : ""}${pics.length ? "" : ", " + t("noPhotosYet")}`}
     >
       <div
         className="bg-cream overflow-hidden"
@@ -195,13 +195,17 @@ function Print({ v, scatter, onOpen }) {
         )}
       </div>
 
-      <div className="absolute left-2.5 right-2.5 bottom-2 flex flex-col gap-1">
+      <div className="@container absolute left-2.5 right-2.5 bottom-2 flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2">
           <span className="font-hand text-[22px] text-ink leading-none truncate">{title}</span>
           <FlagImg iso={v.country} className="w-[14px] h-[10px] shrink-0 shadow-[0_0_0_1px_rgba(0,0,0,.08)]" />
         </div>
-        <span className="text-[12px] text-ink-2 leading-none whitespace-nowrap tabular-nums truncate">
-          {when}{days ? ` · ${formatDays(days)}` : ""}
+        {/* A stay's caption ("feb – jun 2024 · 5 maanden") is longer: on narrow
+            prints it goes a size smaller, and on the narrowest it drops the
+            duration (still in the aria-label) rather than cut off mid-word. */}
+        <span className={`${isStay(v) ? "text-[12px] @max-[160px]:text-[11px]" : "text-[12px]"} text-ink-2 leading-none whitespace-nowrap tabular-nums truncate`}>
+          {when}
+          {duration ? <span className={isStay(v) ? "@max-[141px]:hidden" : undefined}>{` · ${duration}`}</span> : null}
         </span>
       </div>
     </div>
