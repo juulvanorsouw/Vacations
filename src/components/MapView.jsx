@@ -447,12 +447,7 @@ function TripSheetPanel({ v, place, onClose, onPick, onNav, onExpand, onDetails,
               <FlagImg iso={v.country} className="w-5 h-3.5" />
               <span className="text-[11px] text-ink-2 tracking-widest uppercase truncate">{text.location || text.title}</span>
             </div>
-            <div className="font-hand text-[32px] text-ink leading-none mb-1 truncate">{text.title}</div>
-            <div className="text-[13px] text-ink-2 tabular-nums">
-              {formatDateRange(v.startDate, v.endDate)}
-              {duration ? <span className="whitespace-nowrap">{` · ${duration}`}</span> : null}
-              {visit ? <span className="whitespace-nowrap">{` · ${t("nthVisit", visit.n)}`}</span> : null}
-            </div>
+            <div className="font-hand text-[32px] text-ink leading-none truncate">{text.title}</div>
           </div>
           <div className="flex gap-1.5 shrink-0">
             <NavButton small onClick={() => onNav(-1)} label={t("prevTrip")}>&#8249;</NavButton>
@@ -465,6 +460,12 @@ function TripSheetPanel({ v, place, onClose, onPick, onNav, onExpand, onDetails,
               ✕
             </button>
           </div>
+        </div>
+        {/* Dates on their own line, so they never wrap mid-date next to the buttons. */}
+        <div className="text-[13px] text-ink-2 tabular-nums mt-1">
+              {formatDateRange(v.startDate, v.endDate)}
+              {duration ? <span className="whitespace-nowrap">{` · ${duration}`}</span> : null}
+              {visit ? <span className="whitespace-nowrap">{` · ${t("nthVisit", visit.n)}`}</span> : null}
         </div>
 
         {place && place.trips.length > 1 && (

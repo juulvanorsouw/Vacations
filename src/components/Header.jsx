@@ -22,7 +22,7 @@ export default function Header({ view, onViewChange, tripCount, countryCount, la
 
   return (
     <header className="fixed top-0 inset-x-0 z-[900] bg-wall/90 backdrop-blur-xl border-b border-line pt-[env(safe-area-inset-top)]">
-      <div className="h-[54px] flex items-center justify-between gap-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] sm:px-5">
+      <div className="h-[54px] flex items-center justify-between gap-2 sm:gap-3 pl-[max(.75rem,env(safe-area-inset-left))] pr-[max(.75rem,env(safe-area-inset-right))] sm:px-5">
         <a
           href="#"
           onClick={(e) => { e.preventDefault(); onViewChange("wall"); }}
@@ -33,7 +33,7 @@ export default function Header({ view, onViewChange, tripCount, countryCount, la
         </a>
 
         {/* Text tabs with a red underline: the one pill on a screen is kept for its main action. */}
-        <div ref={listRef} className="flex gap-4 sm:gap-6 h-full" role="tablist" aria-label={t("views")} onKeyDown={onKeyDown}>
+        <div ref={listRef} className="flex gap-3 min-[400px]:gap-4 sm:gap-6 h-full" role="tablist" aria-label={t("views")} onKeyDown={onKeyDown}>
           {TABS.map((id) => (
             <button
               key={id}
@@ -53,7 +53,7 @@ export default function Header({ view, onViewChange, tripCount, countryCount, la
           ))}
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 text-xs text-ink-2 tabular-nums">
+        <div className="flex items-center gap-2 min-[400px]:gap-3 sm:gap-4 shrink-0 text-xs text-ink-2 tabular-nums">
           <span className="hidden md:inline">
             <button className="hover:text-ink transition-colors" onClick={() => onViewChange("wall")}>{t("trips", tripCount)}</button>
             <span aria-hidden="true"> · </span>
@@ -76,15 +76,15 @@ export default function Header({ view, onViewChange, tripCount, countryCount, la
               </svg>
             )}
           </button>
-          <div className="flex items-center gap-1.5" role="group" aria-label={t("language")}>
+          <div className="flex items-center gap-0.5" role="group" aria-label={t("language")}>
             {LANGS.map((l, i) => (
-              <span key={l} className="flex items-center gap-1.5">
+              <span key={l} className="flex items-center gap-0.5">
                 {i > 0 && <span aria-hidden="true" className="text-line-h">/</span>}
                 <button
                   onClick={() => onLangChange(l)}
                   aria-pressed={lang === l}
                   lang={l}
-                  className={`uppercase py-1 transition-colors ${lang === l ? "text-ink font-semibold" : "hover:text-ink"}`}
+                  className={`uppercase h-8 px-1.5 rounded-full transition-colors ${lang === l ? "text-ink font-semibold" : "hover:text-ink hover:bg-cream"}`}
                 >
                   {l}
                 </button>
