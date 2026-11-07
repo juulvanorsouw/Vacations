@@ -811,19 +811,6 @@ export const VACATIONS = [
       ]
     },
     {
-      "id": "nideggen-2024",
-      "title": "Nideggen",
-      "location": "Nideggen, Duitsland",
-      "country": "DE",
-      "lat": 50.6978,
-      "lon": 6.4739,
-      "startDate": "2024-11-20",
-      "endDate": "2024-11-24",
-      "description": "Een lang weekend in het Eifelgebied bij het historische stadje Nideggen.",
-      "folder": "pictures/nideggen-2024",
-      "pictures": ["foto-1.jpeg", "foto-2.jpeg", "foto-3.jpeg", "video-1.mp4"]
-    },
-    {
       "id": "alanya-2024",
       "title": "Alanya",
       "location": "Alanya, Turkije",
@@ -874,6 +861,19 @@ export const VACATIONS = [
         "foto-4.jpeg",
         "video-1.mp4"
       ]
+    },
+    {
+      "id": "nideggen-2023",
+      "title": "Nideggen",
+      "location": "Nideggen, Duitsland",
+      "country": "DE",
+      "lat": 50.6978,
+      "lon": 6.4739,
+      "startDate": "2023-11-20",
+      "endDate": "2023-11-24",
+      "description": "Een lang weekend in het Eifelgebied bij het historische stadje Nideggen.",
+      "folder": "pictures/nideggen-2023",
+      "pictures": ["foto-1.jpeg", "foto-2.jpeg", "foto-3.jpeg", "video-1.mp4"]
     },
     {
       "id": "tallinn-2023",

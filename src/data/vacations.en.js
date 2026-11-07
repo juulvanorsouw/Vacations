@@ -21,7 +21,7 @@ export const TRIPS_EN = {
   "alsace-2025": { location: "Alsace, France", description: "A week through Alsace with Colmar and Sélestat, half-timbered houses and vineyards." },
   "tivat-2025": { location: "Tivat, Montenegro", description: "A road trip through Montenegro and the Balkans with mountain hikes, the Bay of Kotor and turquoise rivers." },
   "budapest-2025": { title: "Budapest", location: "Budapest, Hungary", description: "A week in Budapest with day trips to Esztergom and to Štúrovo in Slovakia, across the Danube." },
-  "nideggen-2024": { location: "Nideggen, Germany", description: "A long weekend in the Eifel near the historic little town of Nideggen." },
+  "nideggen-2023": { location: "Nideggen, Germany", description: "A long weekend in the Eifel near the historic little town of Nideggen." },
   "alanya-2024": { location: "Alanya, Turkey", description: "A week in Alanya on the Turkish Riviera, looking out from the castle over the harbour and the Red Tower." },
   "kos-2024": { location: "Kos, Greece", description: "A week on the Greek island of Kos." },
   "oslo-2024": { location: "Oslo, Norway", description: "Five months living in Oslo, from February to the end of June." },
