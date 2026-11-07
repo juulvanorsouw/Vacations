@@ -3,24 +3,35 @@
 // markers and the gallery grid load these instead of the full-size originals;
 // the lightbox still opens the original. Runs automatically before `start`
 // and `build`, and only re-encodes files that are missing or outdated.
-import { readdir, stat, mkdir, writeFile, copyFile } from "node:fs/promises";
+import { readdir, stat, mkdir, readFile, writeFile, copyFile, rm } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import path from "node:path";
 import sharp from "sharp";
+
+const run = promisify(execFile);
 
 const SRC = path.resolve("public/pictures");
 const OUT = path.resolve("public/thumbs");
 const WIDTH = 640;
 const LARGE = [1080, 1600];
 const IMAGE = /\.(jpe?g|png|webp|gif|heic|avif)$/i;
+const VIDEO = /\.(mp4|webm|mov)$/i;
+const SITE = "https://juulvanorsouw.github.io/Vacations/";
 
-async function walk(dir) {
+async function walk(dir, re = IMAGE) {
   const out = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await walk(p)));
-    else if (IMAGE.test(entry.name)) out.push(p);
+    if (entry.isDirectory()) out.push(...(await walk(p, re)));
+    else if (re.test(entry.name)) out.push(p);
   }
   return out;
+}
+
+// ffmpeg / ffprobe are optional: the GitHub runner has them, a laptop may not.
+async function has(cmd) {
+  try { await run(cmd, ["-version"]); return true; } catch { return false; }
 }
 
 async function isFresh(src, dest) {
@@ -71,6 +82,66 @@ for (const src of files) {
     colors[rel.split(path.sep).join("/")] = [hex, width, height];
   } catch { /* no colour, the print falls back to cream */ }
 }
+// ── Video posters ──────────────────────────────────────────────────────────
+// A still frame (~1s in) per video, written next to the photo thumbnails as
+// thumbs/<folder>/<name>.webp, so the gallery and the wall show a picture
+// instead of loading the video. Its entry in photoColors.json gets the video's
+// own size, plus a 4th value 1 when the file has no audio track (those loop
+// muted inline). Without ffmpeg no new posters are made (quietly); posters
+// already on disk keep their entry from the previous run.
+const videos = await walk(SRC, VIDEO).catch(() => []);
+const previous = JSON.parse(await readFile(path.resolve("src/data/photoColors.json"), "utf8").catch(() => "{}"));
+let posters = 0;
+if (videos.length) {
+  const ffmpeg = await has("ffmpeg");
+  const probe = ffmpeg && (await has("ffprobe"));
+  for (const src of videos) {
+    const rel = path.relative(SRC, src);
+    const key = rel.split(path.sep).join("/");
+    const dest = path.join(OUT, rel.replace(/\.[^.]+$/, ".webp"));
+    const fresh = await isFresh(src, dest);
+    if (!fresh && !ffmpeg) continue;
+    if (!fresh) {
+      await mkdir(path.dirname(dest), { recursive: true });
+      const tmp = dest + ".poster.png";
+      try {
+        // -ss before -i seeks fast; a clip shorter than 1s falls back to its first frame.
+        for (const at of ["1", "0"]) {
+          await run("ffmpeg", ["-y", "-loglevel", "error", "-ss", at, "-i", src, "-frames:v", "1", tmp]);
+          if (await stat(tmp).then((s) => s.size > 0, () => false)) break;
+        }
+        await sharp(tmp).resize({ width: WIDTH, withoutEnlargement: true }).webp({ quality: 78 }).toFile(dest);
+        posters++;
+      } catch (err) {
+        console.warn("poster overgeslagen:", rel, err.message);
+        continue;
+      } finally {
+        await rm(tmp, { force: true });
+      }
+    }
+    try {
+      const img = sharp(dest);
+      const [{ dominant: { r, g, b } }, meta] = await Promise.all([img.stats(), img.metadata()]);
+      const hex = "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("");
+      let width = meta.width, height = meta.height, silent = 0;
+      if (!probe && previous[key]) [, width, height, silent = 0] = previous[key];
+      else if (probe) {
+        // The real (rotation-aware) frame size and whether there is any audio.
+        const { stdout } = await run("ffprobe", ["-v", "error", "-show_streams", "-of", "json", src]);
+        const streams = JSON.parse(stdout).streams || [];
+        const v = streams.find((s) => s.codec_type === "video");
+        if (v?.width && v?.height) {
+          const rot = Math.abs(Number(v.tags?.rotate || v.side_data_list?.find((d) => d.rotation != null)?.rotation || 0)) % 180;
+          [width, height] = rot === 90 ? [v.height, v.width] : [v.width, v.height];
+        }
+        silent = streams.some((s) => s.codec_type === "audio") ? 0 : 1;
+      }
+      colors[key] = silent ? [hex, width, height, 1] : [hex, width, height];
+    } catch { /* no poster colour; the tile falls back to cream */ }
+  }
+  console.log(`posters: ${videos.length} video's, ${posters} nieuw gemaakt${ffmpeg ? "" : " (geen ffmpeg)"}`);
+}
+
 await writeFile(path.resolve("src/data/photoColors.json"), JSON.stringify(colors, null, 0) + "\n");
 console.log(`thumbs: ${files.length} foto's, ${made} nieuw gemaakt`);
 
@@ -127,3 +198,51 @@ for (const [name, size] of [["icon-192.png", 192], ["icon-512.png", 512], ["appl
   await sharp(Buffer.from(ICON_SVG)).resize(size, size).png().toFile(path.resolve("public", name));
 }
 console.log(`deelafbeelding: ${prints.length} foto's · iconen gemaakt`);
+
+// ── Per-trip share previews ────────────────────────────────────────────────
+// GitHub Pages serves only static files, so a crawler never sees #<id>. Each
+// trip gets a tiny page at trip/<id>/ with its own og: tags (title, story and
+// cover) that sends visitors straight on to ../../#<id>. Share that URL.
+const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const TRIPS = path.resolve("public/trip");
+await rm(TRIPS, { recursive: true, force: true });
+let stubs = 0;
+for (const v of VACATIONS) {
+  if (!v.id || !/^[\w-]+$/.test(v.id)) continue;
+  const folder = (v.folder || "").replace(/^\/+/, "").replace(/^pictures\/?/, "");
+  const pics = v.pictures || [];
+  // Same cover as the trip page: "cover" when set, else the first photo.
+  const photo = v.cover && pics.includes(v.cover) && !VIDEO.test(v.cover) ? v.cover : pics.find((f) => !VIDEO.test(f));
+  const enc = (rel) => rel.split("/").map(encodeURIComponent).join("/");
+  let image = SITE + "og-image.jpg";
+  if (photo) image = SITE + "thumbs/1080/" + enc(folder + "/" + photo.replace(/\.[^.]+$/, ".webp"));
+  else if (pics[0] && colors[folder + "/" + pics[0]]) image = SITE + "thumbs/" + enc(folder + "/" + pics[0].replace(/\.[^.]+$/, ".webp"));
+  const desc = (v.description || v.location || "").replace(/\s+/g, " ").trim().slice(0, 200);
+  const title = v.title || v.id;
+  const target = "../../#" + v.id;
+  const html = `<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)} · Juuls reizen</title>
+<meta name="description" content="${esc(desc)}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Juuls reizen">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:image" content="${esc(image)}">
+<meta property="og:url" content="${esc(SITE + "trip/" + v.id + "/")}">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="${esc(SITE + "#" + v.id)}">
+<meta http-equiv="refresh" content="0; url=${esc(target)}">
+<script>location.replace(${JSON.stringify(target)});</script>
+</head>
+<body><a href="${esc(target)}">${esc(title)}</a></body>
+</html>
+`;
+  await mkdir(path.join(TRIPS, v.id), { recursive: true });
+  await writeFile(path.join(TRIPS, v.id, "index.html"), html);
+  stubs++;
+}
+console.log(`deelpagina's: ${stubs} reizen`);
