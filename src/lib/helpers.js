@@ -1,4 +1,5 @@
 import PHOTO_COLORS from "@/data/photoColors.json";
+import PHOTO_LOCATIONS from "@/data/photoLocations.json";
 import { locale, t, tripText } from "@/lib/i18n";
 
 export function joinPath(folder, file) {
@@ -40,6 +41,35 @@ export function srcSetFor(src) {
   const base = import.meta.env.BASE_URL.replace(/\/+$/, "") + "/thumbs/";
   const rel = m[1].split("/").map(encodeURIComponent).join("/") + ".webp";
   return `${base}${rel} 640w, ${base}1080/${rel} 1080w, ${base}1600/${rel} 1600w`;
+}
+
+/**
+ * Where a photo was taken, from src/data/photoLocations.json
+ * ("folder/file" -> [lat, lon, how]); how is "exact" (GPS or pasted
+ * coordinates), "map" (placed by hand) or "suggested" (a landmark guess).
+ */
+export function photoLocation(folder, file) {
+  const f = (folder || "").replace(/^\/+/, "").replace(/^pictures\/?/, "");
+  const m = PHOTO_LOCATIONS[(f ? f + "/" : "") + file];
+  return m ? { lat: m[0], lon: m[1], how: m[2] } : null;
+}
+
+/** A trip's photos that have a location, with their index in `pictures`. */
+export function tripPhotoSpots(v) {
+  return (v.pictures || [])
+    .map((file, index) => ({ file, index, loc: photoLocation(v.folder, file) }))
+    .filter((p) => p.loc);
+}
+
+/** The location of a picture given by its full path (as the lightbox has it). */
+export function locationForSrc(src) {
+  const m = /\/pictures\/(.+)\/([^/]+)$/.exec(decodeURIComponent(String(src)));
+  return m ? photoLocation(m[1], m[2]) : null;
+}
+
+/** A Google Maps link that drops a pin on the spot. */
+export function mapsLink(loc) {
+  return `https://www.google.com/maps/search/?api=1&query=${loc.lat},${loc.lon}`;
 }
 
 /** Dominant colour of a photo (from scripts/thumbs.mjs), or undefined. */

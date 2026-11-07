@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { isVideo, srcSetFor } from "@/lib/helpers";
+import { isVideo, srcSetFor, locationForSrc, mapsLink } from "@/lib/helpers";
 import { t } from "@/lib/i18n";
 
 export default function Lightbox({ state, onClose, onNavigate }) {
@@ -11,6 +11,7 @@ export default function Lightbox({ state, onClose, onNavigate }) {
   const isVid = isVideo(src);
   const total = srcs.length;
   const caption = (alts?.[index] || "").replace(/\s\(\d+\/\d+\)$/, "");
+  const loc = isVid ? null : locationForSrc(src);
 
   // Pinch-zoom is left to the browser; a one-finger horizontal swipe goes to
   // the next photo, but not while the page is zoomed in (then it pans).
@@ -86,7 +87,22 @@ export default function Lightbox({ state, onClose, onNavigate }) {
               className="max-w-[96vw] sm:max-w-[88vw] max-h-[80dvh] object-contain select-none block"
             />
           )}
-          {caption && <figcaption className="text-white/85 text-sm text-center px-4">{caption}</figcaption>}
+          {(caption || loc) && (
+            <figcaption className="flex flex-col items-center gap-1 text-white/85 text-sm text-center px-4">
+              {caption && <span>{caption}</span>}
+              {loc && (
+                <a
+                  href={mapsLink(loc)}
+                  target="_blank"
+                  rel="noopener"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-[13px] underline-offset-4 hover:underline py-1"
+                >
+                  <span aria-hidden="true">📍</span>{t("takenHere")} · {t("openInMaps")} ↗
+                </a>
+              )}
+            </figcaption>
+          )}
         </motion.figure>
       </AnimatePresence>
 

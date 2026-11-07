@@ -147,6 +147,7 @@ console.log(`thumbs: ${files.length} foto's, ${made} nieuw gemaakt`);
 
 // Flags for every country the trips touch, copied from the flag-icons package.
 const { VACATIONS } = await import("../src/data/vacations.js");
+const { TRIPS_EN } = await import("../src/data/vacations.en.js");
 const isos = new Set(VACATIONS.flatMap((v) => [v.country, ...(v.countries || [])]).filter(Boolean).map((c) => c.toLowerCase()));
 const FLAGS = path.resolve("public/flags");
 await mkdir(FLAGS, { recursive: true });
@@ -217,32 +218,45 @@ for (const v of VACATIONS) {
   let image = SITE + "og-image.jpg";
   if (photo) image = SITE + "thumbs/1080/" + enc(folder + "/" + photo.replace(/\.[^.]+$/, ".webp"));
   else if (pics[0] && colors[folder + "/" + pics[0]]) image = SITE + "thumbs/" + enc(folder + "/" + pics[0].replace(/\.[^.]+$/, ".webp"));
-  const desc = (v.description || v.location || "").replace(/\s+/g, " ").trim().slice(0, 200);
-  const title = v.title || v.id;
-  const target = "../../#" + v.id;
-  const html = `<!doctype html>
-<html lang="nl">
+  // One page per language: trip/<id>/ in Dutch and trip/<id>/en/ in English.
+  // Each sets the site language before sending the visitor on, so the link
+  // you share opens the trip in the language it was shared in.
+  const en = TRIPS_EN[v.id] || {};
+  for (const lang of ["nl", "en"]) {
+    const isEn = lang === "en";
+    const title = (isEn && en.title) || v.title || v.id;
+    const desc = ((isEn && en.description) || v.description || (isEn && en.location) || v.location || "").replace(/\s+/g, " ").trim().slice(0, 200);
+    const site = isEn ? "Juul's travels" : "Juuls reizen";
+    const target = (isEn ? "../../../#" : "../../#") + v.id;
+    const url = SITE + "trip/" + v.id + "/" + (isEn ? "en/" : "");
+    const html = `<!doctype html>
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)} · Juuls reizen</title>
+<title>${esc(title)} · ${esc(site)}</title>
 <meta name="description" content="${esc(desc)}">
 <meta property="og:type" content="article">
-<meta property="og:site_name" content="Juuls reizen">
+<meta property="og:site_name" content="${esc(site)}">
+<meta property="og:locale" content="${isEn ? "en_GB" : "nl_NL"}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:image" content="${esc(image)}">
-<meta property="og:url" content="${esc(SITE + "trip/" + v.id + "/")}">
+<meta property="og:url" content="${esc(url)}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="${esc(SITE + "#" + v.id)}">
+<link rel="alternate" hreflang="nl" href="${esc(SITE + "trip/" + v.id + "/")}">
+<link rel="alternate" hreflang="en" href="${esc(SITE + "trip/" + v.id + "/en/")}">
 <meta http-equiv="refresh" content="0; url=${esc(target)}">
-<script>location.replace(${JSON.stringify(target)});</script>
+<script>try { localStorage.setItem("lang", ${JSON.stringify(lang)}); } catch (e) {} location.replace(${JSON.stringify(target)});</script>
 </head>
 <body><a href="${esc(target)}">${esc(title)}</a></body>
 </html>
 `;
-  await mkdir(path.join(TRIPS, v.id), { recursive: true });
-  await writeFile(path.join(TRIPS, v.id, "index.html"), html);
+    const dir = isEn ? path.join(TRIPS, v.id, "en") : path.join(TRIPS, v.id);
+    await mkdir(dir, { recursive: true });
+    await writeFile(path.join(dir, "index.html"), html);
+  }
   stubs++;
 }
-console.log(`deelpagina's: ${stubs} reizen`);
+console.log(`deelpagina's: ${stubs} reizen (nl + en)`);

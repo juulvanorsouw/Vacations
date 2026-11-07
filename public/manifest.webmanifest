@@ -2,6 +2,7 @@
   "name": "Juuls reizen",
   "short_name": "Reizen",
   "description": "Een fotomuur en kaart van alle reizen van Juul.",
+  "lang": "nl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

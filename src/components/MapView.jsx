@@ -5,6 +5,7 @@ import FlagImg from "@/components/FlagImg";
 import {
   joinPath, thumbPath, thumbFallback, photoColor, formatDateRange, formatMonthYear, groupByPlace,
   formatDuration, routeStops, isVideo, visitIndex, photoCaption, coverOf,
+  tripPhotoSpots,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
 
@@ -65,6 +66,8 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
   const navVacationsRef = useRef([]);
   const navIndexRef = useRef(-1);
   const activePlaceRef = useRef(null);
+  const tileLayersRef = useRef(null);
+  const layersControlRef = useRef(null);
 
   const [sheetTrip, setSheetTrip] = useState(null);
 
@@ -95,6 +98,7 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
 
   function showRouteFor(v) {
     clearRoute();
+    showPhotoSpots(v);
     if (!v.route?.length || v.route.length < 2) return;
     const latlngs = v.route
       .filter((p) => typeof p.lat === "number" && typeof p.lon === "number")
@@ -112,6 +116,40 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     });
   }
 
+  /**
+   * Photos with a known spot (src/data/photoLocations.json) appear as small
+   * Polaroids where they were taken; tapping one opens it in the lightbox.
+   */
+  function showPhotoSpots(v) {
+    const spots = tripPhotoSpots(v).filter((p) => !isVideo(p.file));
+    if (!spots.length) return;
+    const pics = v.pictures || [];
+    const srcs = pics.map((p) => joinPath(v.folder, p));
+    const captions = pics.map((_, i) => photoCaption(v, i, pics.length));
+    spots.forEach((p, k) => {
+      const thumb = thumbPath(v.folder, p.file);
+      const marker = L.marker([p.loc.lat, p.loc.lon], {
+        icon: L.divIcon({
+          className: "photo-pin-wrap",
+          html: `<div class="photo-pin" style="--tilt:${TILTS[(k + 2) % TILTS.length]}deg"><img src="${thumb}" alt="" style="background:${photoColor(v.folder, p.file) || "var(--cream)"}" /></div>`,
+          iconSize: [36, 40], iconAnchor: [18, 36],
+        }),
+        title: captions[p.index], alt: captions[p.index], riseOnHover: true, zIndexOffset: 500,
+      });
+      const open = () => onOpenLightbox(srcs, captions, p.index);
+      marker.on("click", open);
+      marker.on("add", () => {
+        const el = marker.getElement();
+        if (!el) return;
+        let moved = false;
+        el.addEventListener("touchstart", () => { moved = false; }, { passive: true });
+        el.addEventListener("touchmove", () => { moved = true; }, { passive: true });
+        el.addEventListener("touchend", (e) => { if (!moved) { e.preventDefault(); open(); } });
+      });
+      marker.addTo(routesLayerRef.current);
+    });
+  }
+
   // Fly to the trip, keeping it in the part of the map the sheet doesn't cover.
   function zoomToVacation(v, expanded = false) {
     const map = mapRef.current;
@@ -119,6 +157,8 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     const pts = [];
     v.route?.forEach((p) => { if (typeof p.lat === "number") pts.push([p.lat, p.lon]); });
     if (!pts.length && typeof v.lat === "number") pts.push([v.lat, v.lon]);
+    // Frame the photo spots too, so every placed photo is in view.
+    tripPhotoSpots(v).forEach((p) => pts.push([p.loc.lat, p.loc.lon]));
     if (!pts.length) return;
     const pad = coveredPadding(expanded);
     if (pts.length === 1) {
@@ -226,7 +266,8 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     // zoomSnap .25 lets the first frame hug the trips instead of snapping a
     // whole zoom level out (which put Iceland in the middle).
     const map = L.map(mapElRef.current, { layers: [light], worldCopyJump: true, zoomSnap: 0.25 }).setView([50, 10], 4);
-    L.control.layers({ [t("tilesLight")]: light, [t("tilesSatellite")]: satellite }, null, { position: "topright", collapsed: true }).addTo(map);
+    tileLayersRef.current = { light, satellite };
+    layersControlRef.current = L.control.layers({ [t("tilesLight")]: light, [t("tilesSatellite")]: satellite }, null, { position: "topright", collapsed: true }).addTo(map);
     mapRef.current = map;
     routesLayerRef.current = L.layerGroup().addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
@@ -242,9 +283,32 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     map.on("zoomend", renderMarkers);
 
     const pts = placesRef.current.map((p) => [p.lat, p.lon]);
-    if (pts.length) {
-      const pad = isPhone() ? { paddingTopLeft: [28, 70], paddingBottomRight: [28, 40] } : { paddingTopLeft: [70, 70], paddingBottomRight: [90, 70] };
-      map.fitBounds(pts, { ...pad, maxZoom: 6 });
+    if (pts.length && isPhone()) {
+      // A portrait phone fitting every trip from Porto to Alanya shows mostly
+      // sea and Africa. Instead centre on where most trips are (the median
+      // place) and zoom in until the trips fill the height; the farthest
+      // ones sit just off the edges, a swipe away.
+      const lons = pts.map((p) => p[1]).sort((a, b) => a - b);
+      const bounds = L.latLngBounds(pts);
+      const fitHeight = () => {
+        const size = map.getSize();
+        if (!size.y) return;
+        // Zoom at which north to south fits between the top buttons and the bottom edge.
+        const top = 120, bottom = 40;
+        let z = 3;
+        for (let zz = 7; zz >= 3; zz -= 0.25) {
+          const h = map.project([bounds.getSouth(), 0], zz).y - map.project([bounds.getNorth(), 0], zz).y;
+          if (h <= size.y - top - bottom) { z = zz; break; }
+        }
+        // Vertical middle in map space (not degrees), shifted down a little for the buttons on top.
+        const yMid = (map.project([bounds.getNorth(), 0], z).y + map.project([bounds.getSouth(), 0], z).y) / 2 - (top - bottom) / 2;
+        const lat = map.unproject(L.point(0, yMid), z).lat;
+        map.setView([lat, lons[Math.floor(lons.length / 2)]], z, { animate: false });
+      };
+      fitHeight();
+      if (!map.getSize().y) map.once("resize", fitHeight);
+    } else if (pts.length) {
+      map.fitBounds(pts, { paddingTopLeft: [70, 70], paddingBottomRight: [90, 70], maxZoom: 6 });
     }
     renderMarkers();
 
@@ -256,13 +320,22 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
   }, []);
 
   // Marker labels are built in the current language: rebuild them when it changes.
-  useEffect(() => { renderMarkers(); /* eslint-disable-line react-hooks/exhaustive-deps */ }, [lang]);
+  // The layer switcher's names too: rebuild it in the new language.
+  useEffect(() => {
+    renderMarkers();
+    const map = mapRef.current, layers = tileLayersRef.current;
+    if (!map || !layers || !layersControlRef.current) return;
+    layersControlRef.current.remove();
+    layersControlRef.current = L.control.layers({ [t("tilesLight")]: layers.light, [t("tilesSatellite")]: layers.satellite }, null, { position: "topright", collapsed: true }).addTo(map);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   return (
     <div className="absolute inset-0 bg-[var(--map-bg)]">
       <div ref={mapElRef} className="absolute inset-0" />
 
-      {sheetTrip && <div className="absolute inset-0 z-[699] sm:hidden" onClick={closeSheet} />}
+      {/* No tap-catcher over the map: tapping empty map closes the sheet (map "click"),
+          while the trip's photo pins stay tappable. */}
 
       <AnimatePresence>
         {sheetTrip && (

@@ -38,6 +38,9 @@ export default function App() {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.title = t("siteName");
+    // Home-screen install picks up the app name in the current language.
+    const m = document.getElementById("manifest");
+    if (m) m.href = m.href.replace(/manifest(\.en)?\.webmanifest/, lang === "en" ? "manifest.en.webmanifest" : "manifest.webmanifest");
     saveLang(lang);
   }, [lang]);
 

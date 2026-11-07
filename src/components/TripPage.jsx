@@ -5,6 +5,7 @@ import FlagImg from "@/components/FlagImg";
 import {
   joinPath, thumbPath, thumbFallback, photoColor, photoRatio, formatDateRange, formatMonthYear,
   tripDays, formatDays, routeStops, isVideo, photoCaption, srcSetFor,
+  tripPhotoSpots,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
 import PHOTO_COLORS from "@/data/photoColors.json";
@@ -319,6 +320,19 @@ function RouteMap({ trip, stops, onOpen }) {
     }).addTo(map);
 
     const pts = (trip.route || []).filter((p) => typeof p.lat === "number" && typeof p.lon === "number").map((p) => [p.lat, p.lon]);
+    // Placed photos as small Polaroids where they were taken.
+    const spots = tripPhotoSpots(trip).filter((p) => !isVideo(p.file));
+    spots.forEach((p, k) => {
+      L.marker([p.loc.lat, p.loc.lon], {
+        icon: L.divIcon({
+          className: "photo-pin-wrap",
+          html: `<div class="photo-pin" style="--tilt:${[-4, 3, -2, 4, -3, 2][k % 6]}deg"><img src="${thumbPath(trip.folder, p.file)}" alt="" /></div>`,
+          iconSize: [36, 40], iconAnchor: [18, 36],
+        }),
+        interactive: false, keyboard: false, zIndexOffset: 500,
+      }).addTo(map);
+    });
+    const spotPts = spots.map((p) => [p.loc.lat, p.loc.lon]);
     if (pts.length > 1) {
       L.polyline(pts, { color: "#ffffff", weight: 5, opacity: 0.9 }).addTo(map);
       L.polyline(pts, { color: "#e2574b", weight: 2.5, opacity: 0.95, dashArray: "6,7" }).addTo(map);
@@ -332,7 +346,10 @@ function RouteMap({ trip, stops, onOpen }) {
           interactive: false, keyboard: false,
         }).addTo(map);
       });
-      map.fitBounds(L.latLngBounds(pts), { padding: [18, 18] });
+      map.fitBounds(L.latLngBounds([...pts, ...spotPts]), { padding: [24, 24] });
+    } else if (spotPts.length) {
+      // No route: frame the photo spots (leaving room for the prints above their pins).
+      map.fitBounds(L.latLngBounds(spotPts), { paddingTopLeft: [30, 46], paddingBottomRight: [30, 14], maxZoom: 15 });
     } else {
       L.circleMarker([trip.lat, trip.lon], { radius: 7, color: "#fff", weight: 2.5, fillColor: "#e2574b", fillOpacity: 1 }).addTo(map);
       map.setView([trip.lat, trip.lon], 10);
@@ -341,6 +358,7 @@ function RouteMap({ trip, stops, onOpen }) {
   }, [trip]);
 
   if (typeof trip.lat !== "number") return null;
+  const spotCount = tripPhotoSpots(trip).filter((p) => !isVideo(p.file)).length;
 
   return (
     <div className="flex flex-col gap-2">
@@ -351,6 +369,9 @@ function RouteMap({ trip, stops, onOpen }) {
       >
         <div ref={el} className="h-[170px] sm:h-[220px] w-full bg-[var(--map-bg)] pointer-events-none" />
         <span className="absolute right-3 top-3 z-[500] bg-paper/95 rounded-[4px] px-2.5 py-1 text-xs font-medium text-ink shadow-sm">{t("bigMap")}</span>
+        {spotCount > 0 && (
+          <span className="absolute left-3 bottom-3 z-[500] bg-paper/95 rounded-[4px] px-2 py-0.5 text-[11px] text-ink-2 shadow-sm">{t("photoSpots", spotCount)}</span>
+        )}
       </button>
       {stops.length > 0 && (
         <ol className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-ink-2 leading-relaxed m-0 p-0 list-none">
