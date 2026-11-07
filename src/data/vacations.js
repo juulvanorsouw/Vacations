@@ -893,5 +893,19 @@ export const VACATIONS = [
         { "name": "Tallinn",  "lat": 59.4370, "lon": 24.7536 },
         { "name": "Helsinki", "lat": 60.1699, "lon": 24.9384 }
       ]
+    },
+    {
+      "id": "tschagguns-2023",
+      "title": "Tschagguns",
+      "location": "Tschagguns, Vorarlberg, Oostenrijk",
+      "country": "AT",
+      "lat": 47.0767,
+      "lon": 9.9028,
+      "startDate": "2023-01-21",
+      "endDate": "2023-01-27",
+      "description": "Een week skiën in het Montafon vanuit Tschagguns, met de Golm en een wolkenzee onder de gondel.",
+      "folder": "pictures/tschagguns-2023",
+      "cover": "golm-piste.mp4",
+      "pictures": ["golm-piste.mp4", "gondel-wolkenzee.jpeg"]
     }
   ];

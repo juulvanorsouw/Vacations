@@ -25,5 +25,6 @@ export const TRIPS_EN = {
   "alanya-2024": { location: "Alanya, Turkey", description: "A week in Alanya on the Turkish Riviera, looking out from the castle over the harbour and the Red Tower." },
   "kos-2024": { location: "Kos, Greece", description: "A week on the Greek island of Kos." },
   "oslo-2024": { location: "Oslo, Norway", description: "Five months living in Oslo, from February to the end of June." },
+  "tschagguns-2023": { location: "Tschagguns, Vorarlberg, Austria", description: "A week of skiing in the Montafon from Tschagguns, with the Golm and a sea of clouds below the gondola." },
   "tallinn-2023": { location: "Tallinn, Estonia", description: "A week in Tallinn with a stop in Helsinki." },
 };
