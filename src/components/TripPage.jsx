@@ -27,6 +27,58 @@ export default function TripPage({ trip, newer, older, docked, onClose, onGoTo, 
 
   useEffect(() => { scrollRef.current?.scrollTo({ top: 0 }); setPastCover(false); }, [trip.id]);
 
+  // Which gallery photo is in the middle of the screen: its pin lights up on
+  // the floating mini-map while you scroll through the photos.
+  const [focusIdx, setFocusIdx] = useState(null);
+  const spotCount = tripPhotoSpots(trip).filter((p) => !isVideo(p.file)).length;
+  const showMini = spotCount >= 2 && focusIdx !== null;
+  useEffect(() => {
+    setFocusIdx(null);
+    const root = scrollRef.current;
+    if (!root || spotCount < 2) return;
+    const spotIdx = new Set(tripPhotoSpots(trip).map((p) => p.index));
+    let raf = 0;
+    // A reading line across the screen: in the middle while scrolling, moving
+    // down to 85% over the last screenful so the bottom rows also get a turn.
+    const update = () => {
+      raf = 0;
+      const tiles = [...root.querySelectorAll("[data-photo]")];
+      if (!tiles.length) return;
+      const box = root.getBoundingClientRect();
+      const toEnd = root.scrollHeight - root.clientHeight - root.scrollTop;
+      const f = Math.min(1, Math.max(0, 1 - toEnd / root.clientHeight));
+      const line = box.top + root.clientHeight * (0.5 + 0.35 * f);
+      const rects = tiles.map((el) => el.getBoundingClientRect());
+      const first = rects[0].top, last = Math.max(...rects.map((r) => r.bottom));
+      // Before the gallery reaches the line: nothing. Past it: the last row
+      // stays lit as long as it is still on screen.
+      if (line < first - 8 || last < box.top + 80) { setFocusIdx(null); return; }
+      // The tile on the line (or the nearest row to it), leftmost first.
+      let best = 0, bestD = Infinity;
+      rects.forEach((r, i) => {
+        const d = line < r.top ? r.top - line : line > r.bottom ? line - r.bottom : 0;
+        if (d < bestD - 0.5) { bestD = d; best = i; }
+      });
+      // Of the photos on that row, prefer one that has a pin on the map.
+      const row = rects.map((r, i) => i).filter((i) => Math.abs(rects[i].top - rects[best].top) < 4);
+      const pinned = row.find((i) => spotIdx.has(+tiles[i].dataset.photo));
+      setFocusIdx(+tiles[pinned ?? best].dataset.photo);
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    // Touching or hovering a photo lights up its own pin (photos side by side in a row).
+    const onPoint = (e) => { const tile = e.target.closest?.("[data-photo]"); if (tile && root.contains(tile)) setFocusIdx(+tile.dataset.photo); };
+    root.addEventListener("scroll", onScroll, { passive: true });
+    root.addEventListener("pointerover", onPoint);
+    root.addEventListener("touchstart", onPoint, { passive: true });
+    update();
+    return () => {
+      root.removeEventListener("scroll", onScroll);
+      root.removeEventListener("pointerover", onPoint);
+      root.removeEventListener("touchstart", onPoint);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [trip.id, spotCount]);
+
   const pics = trip.pictures || [];
   const srcs = pics.map((p) => joinPath(trip.folder, p));
   const captions = pics.map((_, i) => photoCaption(trip, i, pics.length));
@@ -51,6 +103,9 @@ export default function TripPage({ trip, newer, older, docked, onClose, onGoTo, 
       aria-label={text.title}
     >
       {/* Floating controls over the cover photo */}
+      {spotCount >= 2 && (
+        <MiniMap trip={trip} focusIdx={focusIdx} visible={showMini} onOpen={() => onViewOnMap(trip.id)} />
+      )}
       {/* Floating over the cover; once the cover has scrolled away they get a bar so they never sit on text. */}
       <div className={`absolute top-0 inset-x-0 z-10 flex items-center justify-between gap-2 px-3 sm:px-5 ${docked ? "pt-3" : "pt-[max(.75rem,env(safe-area-inset-top))]"} pb-3 pointer-events-none transition-colors duration-200 ${pastCover ? "bg-wall/95 backdrop-blur-md border-b border-line" : ""}`}>
         {pastCover && <span className="absolute left-1/2 -translate-x-1/2 bottom-3.5 font-hand text-[22px] leading-none text-ink truncate max-w-[45%]">{text.title}</span>}
@@ -135,7 +190,7 @@ export default function TripPage({ trip, newer, older, docked, onClose, onGoTo, 
           <RouteMap trip={trip} stops={stops} onOpen={() => onViewOnMap(trip.id)} />
 
           {pics.length > 0 ? (
-            <Gallery trip={trip} docked={docked} pics={pics} srcs={srcs} captions={captions} onOpen={(i) => onOpenLightbox(srcs, captions, i)} />
+            <Gallery trip={trip} docked={docked} pics={pics} srcs={srcs} captions={captions} focusIdx={showMini ? focusIdx : null} onOpen={(i) => onOpenLightbox(srcs, captions, i)} />
           ) : (
             <div className="text-ink-2 text-sm text-center py-10 border border-dashed border-line-h">{t("noPhotosForTrip")}</div>
           )}
@@ -185,7 +240,7 @@ function NeighbourLink({ trip, dir, onClick }) {
  * each row fills the width at about the same height and photos keep their
  * shape and their order. The trailing spacer stops the last row stretching.
  */
-function Gallery({ trip, docked, pics, srcs, captions, onOpen }) {
+function Gallery({ trip, docked, pics, srcs, captions, onOpen, focusIdx }) {
   const [videoRatios, setVideoRatios] = useState({});
   return (
     <div className={`flex flex-wrap gap-1 [--rh:150px] ${docked ? "[--rh:170px]" : "sm:[--rh:220px]"}`}>
@@ -197,8 +252,9 @@ function Gallery({ trip, docked, pics, srcs, captions, onOpen }) {
         return (
           <button
             key={p}
+            data-photo={i}
             onClick={() => onOpen(i)}
-            className="relative overflow-hidden active:opacity-80 transition-opacity"
+            className={`relative overflow-hidden active:opacity-80 transition-[opacity,box-shadow] ${focusIdx === i ? "shadow-[0_0_0_3px_var(--pin)]" : ""}`}
             style={{ flexGrow: ratio, flexBasis: `calc(var(--rh) * ${ratio})`, aspectRatio: ratio, backgroundColor: photoColor(trip.folder, p) || "var(--cream)" }}
             aria-label={vid ? t("videoOf", i + 1, pics.length) : captions[i]}
           >
@@ -386,5 +442,66 @@ function RouteMap({ trip, stops, onOpen }) {
         </ol>
       )}
     </div>
+  );
+}
+
+/**
+ * Small map card that floats in the corner while you scroll the gallery. It
+ * shows the trip's photo spots; the photo in the middle of the screen lights
+ * up and the map pans to it. Tap it to open the big map.
+ */
+function MiniMap({ trip, focusIdx, visible, onOpen }) {
+  const el = useRef(null);
+  const mapRef = useRef(null);
+  const markers = useRef(new Map()); // photo index -> marker
+
+  useEffect(() => {
+    if (!el.current) return;
+    const map = L.map(el.current, {
+      zoomControl: false, dragging: false, touchZoom: false, scrollWheelZoom: false,
+      doubleClickZoom: false, boxZoom: false, keyboard: false, attributionControl: false, zoomSnap: 0.25,
+    });
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, className: "tile-paper" }).addTo(map);
+    const spots = tripPhotoSpots(trip).filter((p) => !isVideo(p.file));
+    markers.current.clear();
+    spots.forEach((p) => {
+      const m = L.marker([p.loc.lat, p.loc.lon], {
+        icon: L.divIcon({ className: "mini-dot-wrap", html: `<span class="mini-dot"></span>`, iconSize: [14, 14], iconAnchor: [7, 7] }),
+        interactive: false, keyboard: false,
+      }).addTo(map);
+      markers.current.set(p.index, m);
+    });
+    map.fitBounds(L.latLngBounds(spots.map((p) => [p.loc.lat, p.loc.lon])), { padding: [16, 16], maxZoom: 15 });
+    mapRef.current = map;
+    return () => { map.remove(); mapRef.current = null; };
+  }, [trip]);
+
+  // Light up the focused photo's pin and keep it in view.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    markers.current.forEach((m, i) => {
+      const on = i === focusIdx;
+      m.getElement()?.firstElementChild?.classList.toggle("is-on", on);
+      m.setZIndexOffset(on ? 1000 : 0);
+    });
+    const active = markers.current.get(focusIdx);
+    if (active && visible && !map.getBounds().pad(-0.15).contains(active.getLatLng())) map.panTo(active.getLatLng(), { animate: true, duration: 0.4 });
+  }, [focusIdx, visible]);
+
+  // Leaflet needs to measure again once the card is shown.
+  useEffect(() => { if (visible) setTimeout(() => mapRef.current?.invalidateSize(), 50); }, [visible]);
+
+  return (
+    <button
+      onClick={onOpen}
+      aria-label={t("viewOnBigMap")}
+      tabIndex={visible ? 0 : -1}
+      className={`absolute z-20 right-3 sm:right-5 bottom-[calc(1rem+env(safe-area-inset-bottom))] bg-paper p-1 shadow-[var(--shadow)] transition-[opacity,transform] duration-200 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3 pointer-events-none"
+      }`}
+    >
+      <div ref={el} className="w-[118px] h-[118px] sm:w-[170px] sm:h-[170px] bg-[var(--map-bg)] pointer-events-none" />
+    </button>
   );
 }

@@ -253,6 +253,16 @@ body {
 .photo-pin:hover { transform: rotate(0) scale(1.25); }
 @media (prefers-reduced-motion: reduce) { .photo-pin { transition: none; } }
 
+/* Trip page mini-map: one dot per placed photo, the one in view lights up. */
+.mini-dot-wrap { background: transparent; border: 0; }
+.mini-dot {
+  display: block; width: 10px; height: 10px; margin: 2px; border-radius: 50%;
+  background: #fff; border: 2px solid var(--ink-2); box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  transition: transform .2s ease, background .2s, border-color .2s;
+}
+.mini-dot.is-on { background: var(--pin); border-color: #fff; transform: scale(1.7); }
+@media (prefers-reduced-motion: reduce) { .mini-dot { transition: none; } }
+
 /* Numbered route stops (trip page map + list) */
 .route-num-wrap { background: transparent; border: 0; }
 .route-num {

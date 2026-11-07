@@ -6,6 +6,7 @@ import {
   joinPath, thumbPath, thumbFallback, photoColor, formatDateRange, formatMonthYear, groupByPlace,
   formatDuration, routeStops, isVideo, visitIndex, photoCaption, coverOf,
   tripPhotoSpots,
+  photoLocation,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
 
@@ -211,7 +212,7 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
 
     const clusters = [];
     placesRef.current.forEach((place) => {
-      const pt = map.project([place.lat, place.lon], zoom);
+      const pt = map.project(place.pos, zoom);
       const c = clusters.find((cl) => cl.pt.distanceTo(pt) < CLUSTER_PX);
       if (c) c.places.push(place);
       else clusters.push({ pt, places: [place] });
@@ -226,13 +227,13 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
       const label = stacked
         ? `${c.places.map((p) => tripText(p.trips[0]).title).join(", ")}: ${t("trips", trips.length)}`
         : trips.length > 1 ? `${name}, ${t("visits", trips.length)}` : `${name}, ${formatDateRange(newest.startDate, newest.endDate)}`;
-      const marker = L.marker([lead.lat, lead.lon], {
+      const marker = L.marker(lead.pos, {
         icon: makeIcon(trips, i, { isRecent: trips.some((t) => t.id === mostRecentId), stacked }),
         title: label, alt: label, riseOnHover: true,
       });
       const onTap = () => {
         if (!stacked) { openSheet(newest); return; }
-        const b = L.latLngBounds(c.places.map((p) => [p.lat, p.lon]));
+        const b = L.latLngBounds(c.places.map((p) => p.pos));
         map.flyToBounds(b, { padding: [80, 80], maxZoom: Math.max(zoom + 2, map.getBoundsZoom(b) - 0.5), duration: 0.6 });
       };
       marker.on("click", onTap);
@@ -274,7 +275,16 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
 
     const navVacations = vacations.filter((v) => typeof v.lat === "number" && typeof v.lon === "number");
     navVacationsRef.current = navVacations;
-    placesRef.current = groupByPlace(navVacations);
+    // Each place's marker stands where its cover photo was taken (from
+    // photoLocations.json) instead of the city centre, when that is known.
+    placesRef.current = groupByPlace(navVacations).map((place) => {
+      for (const v of place.trips) {
+        const cover = coverOf(v);
+        const loc = cover && photoLocation(v.folder, cover);
+        if (loc) return { ...place, pos: [loc.lat, loc.lon] };
+      }
+      return { ...place, pos: [place.lat, place.lon] };
+    });
 
     map.on("click", (e) => {
       if (e.originalEvent?.target?.closest(".leaflet-marker-icon")) return;
@@ -282,7 +292,7 @@ const MapView = forwardRef(function MapView({ vacations, lang, onOpenModal, onOp
     });
     map.on("zoomend", renderMarkers);
 
-    const pts = placesRef.current.map((p) => [p.lat, p.lon]);
+    const pts = placesRef.current.map((p) => p.pos);
     if (pts.length && isPhone()) {
       // A portrait phone fitting every trip from Porto to Alanya shows mostly
       // sea and Africa. Instead centre on where most trips are (the median
