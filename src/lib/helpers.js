@@ -171,6 +171,29 @@ export function coverOf(v) {
   return pics.find((p) => !isVideo(p)) || null;
 }
 
+/**
+ * What the wall and the trip page show as the cover: { file, video }. A video
+ * can be the cover ("cover": "clip.mp4"); then it plays muted on a loop. Map
+ * markers and share images keep using coverOf(), which is always a photo.
+ */
+export function coverMedia(v) {
+  const pics = v.pictures || [];
+  if (v.cover && pics.includes(v.cover) && isVideo(v.cover)) return { file: v.cover, video: true };
+  const photo = coverOf(v);
+  if (photo) return { file: photo, video: false };
+  const clip = pics.find(isVideo);
+  return clip ? { file: clip, video: true } : null;
+}
+
+/** Poster frame of a video (made by scripts/thumbs.mjs), or null when there is none yet. */
+export function videoPoster(folder, file) {
+  const f = (folder || "").replace(/^\/+/, "").replace(/^pictures\/?/, "");
+  return PHOTO_COLORS[(f ? f + "/" : "") + file] ? joinPath("thumbs/" + f, String(file).replace(/\.[^.]+$/, ".webp")) : null;
+}
+
+/** True when the visitor asked for less motion (then cover videos don't autoplay). */
+export const prefersReducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 /** Named stops of a route, in order. */
 export function routeStops(v) {
   if (!v.route || v.route.length < 2) return [];

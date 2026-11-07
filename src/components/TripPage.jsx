@@ -6,6 +6,7 @@ import {
   joinPath, thumbPath, thumbFallback, photoColor, photoRatio, formatDateRange, formatMonthYear,
   tripDays, formatDays, routeStops, isVideo, photoCaption, srcSetFor,
   tripPhotoSpots,
+  coverMedia, videoPoster, prefersReducedMotion,
 } from "@/lib/helpers";
 import { t, tripText } from "@/lib/i18n";
 import PHOTO_COLORS from "@/data/photoColors.json";
@@ -82,8 +83,10 @@ export default function TripPage({ trip, newer, older, docked, onClose, onGoTo, 
   const pics = trip.pictures || [];
   const srcs = pics.map((p) => joinPath(trip.folder, p));
   const captions = pics.map((_, i) => photoCaption(trip, i, pics.length));
-  const coverIdx = pics.findIndex((p) => !isVideo(p));
-  const cover = coverIdx >= 0 ? pics[coverIdx] : null;
+  // The trip's own cover ("cover" in vacations.js), which may be a video.
+  const media = coverMedia(trip);
+  const cover = media ? media.file : null;
+  const coverIdx = cover ? pics.indexOf(cover) : -1;
   const days = tripDays(trip);
   const stops = routeStops(trip);
   const text = tripText(trip);
@@ -150,15 +153,28 @@ export default function TripPage({ trip, newer, older, docked, onClose, onGoTo, 
               onClick={() => onOpenLightbox(srcs, captions, coverIdx)}
               aria-label={`${t("openPhoto")}: ${captions[coverIdx]}`}
             >
-              <img
-                src={srcs[coverIdx]}
-                srcSet={srcSetFor(srcs[coverIdx])}
-                sizes={docked ? PANEL_WIDTH : "100vw"}
-                alt=""
-                decoding="async"
-                fetchpriority="high"
-                className="w-full h-full object-cover block"
-              />
+              {media.video ? (
+                // A cover video plays muted on a loop; tap opens it with sound in the lightbox.
+                <video
+                  src={srcs[coverIdx]}
+                  poster={videoPoster(trip.folder, cover) || undefined}
+                  muted
+                  playsInline
+                  loop
+                  autoPlay={!prefersReducedMotion()}
+                  className="w-full h-full object-cover block pointer-events-none"
+                />
+              ) : (
+                <img
+                  src={srcs[coverIdx]}
+                  srcSet={srcSetFor(srcs[coverIdx])}
+                  sizes={docked ? PANEL_WIDTH : "100vw"}
+                  alt=""
+                  decoding="async"
+                  fetchpriority="high"
+                  className="w-full h-full object-cover block"
+                />
+              )}
             </button>
           ) : (
             <div className="w-full h-[clamp(220px,36dvh,360px)] bg-cream flex items-center justify-center">

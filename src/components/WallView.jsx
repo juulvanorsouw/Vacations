@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import FlagImg from "@/components/FlagImg";
 import { t, tripText } from "@/lib/i18n";
-import { joinPath, thumbPath, thumbFallback, captionDate, formatDuration, isStay, isVideo, photoColor, photoRatio, coverOf } from "@/lib/helpers";
+import { joinPath, thumbPath, thumbFallback, captionDate, formatDuration, isStay, isVideo, photoColor, photoRatio, coverOf, coverMedia, videoPoster, prefersReducedMotion } from "@/lib/helpers";
 
 // Pseudo-random but deterministic per trip id, so the wall looks hand-pinned
 // (uneven tilt, nudge and size) yet never shuffles between renders.
@@ -24,8 +24,8 @@ function scatter(id) {
 // Prints keep the photo's own shape, within 2:3 portrait and 3:2 landscape so a
 // tall phone screenshot never becomes a skyscraper.
 function coverRatio(v) {
-  const p = coverOf(v);
-  const r = p ? photoRatio(v.folder, p) : null;
+  const c = coverMedia(v);
+  const r = c ? photoRatio(v.folder, c.file) : null;
   return Math.min(1.5, Math.max(2 / 3, r || 1));
 }
 
@@ -160,8 +160,11 @@ export default function WallView({ vacations, countryCount, onOpenModal }) {
 
 function Print({ v, scatter, onOpen }) {
   const pics = v.pictures || [];
-  const firstImg = coverOf(v);
-  const firstVid = !firstImg && pics.find(isVideo);
+  // The cover may be a video (it then plays muted on a loop), else a photo.
+  const media = coverMedia(v);
+  const firstImg = media && !media.video ? media.file : null;
+  const firstVid = media && media.video ? media.file : null;
+  const poster = firstVid ? videoPoster(v.folder, firstVid) : null;
   const src = firstImg ? thumbPath(v.folder, firstImg) : firstVid ? joinPath(v.folder, firstVid) : null;
   const original = firstImg ? joinPath(v.folder, firstImg) : null;
   const duration = formatDuration(v);
@@ -181,12 +184,21 @@ function Print({ v, scatter, onOpen }) {
     >
       <div
         className="bg-cream overflow-hidden"
-        style={{ aspectRatio: ratio, backgroundColor: firstImg ? photoColor(v.folder, firstImg) : undefined }}
+        style={{ aspectRatio: ratio, backgroundColor: media ? photoColor(v.folder, media.file) : undefined }}
       >
         {firstImg ? (
           <img src={src} onError={thumbFallback(original)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover block" />
         ) : firstVid ? (
-          <video src={src + "#t=0.5"} muted playsInline preload="metadata" className="w-full h-full object-cover block" />
+          <video
+            src={prefersReducedMotion() ? src + "#t=0.5" : src}
+            poster={poster || undefined}
+            muted
+            playsInline
+            loop
+            autoPlay={!prefersReducedMotion()}
+            preload={prefersReducedMotion() ? "metadata" : "auto"}
+            className="w-full h-full object-cover block"
+          />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-pencil text-[12px]">
             <FlagImg iso={v.country} className="w-12 h-8 opacity-90" />
